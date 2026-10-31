@@ -106,13 +106,14 @@ async function sayanMusic(query) {
   };
 }
 
-// card details: new music API first, Rabbit /api/play as backup
+// Rabbit /api/play is the primary provider; Sayan is a fallback because it can
+// intermittently return HTTP 404/500 or an expired audio URL.
 async function getInfo(q) {
   try {
-    return await sayanMusic(q);
+    return await rabbitPlay(q);
   } catch (e) {
-    console.error("[PLAY] music API failed, trying Rabbit:", e?.message || e);
-    return rabbitPlay(q);
+    console.error("[PLAY] Rabbit failed, trying Sayan:", e?.message || e);
+    return sayanMusic(q);
   }
 }
 

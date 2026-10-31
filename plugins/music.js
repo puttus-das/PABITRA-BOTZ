@@ -101,9 +101,9 @@ async function askApi(api, params, timeout = 25_000) {
 }
 
 const SOURCES = [
+  ["rabbit", (q) => askApi(RABBIT_API, { q })],
   ["spotify", (q) => askApi(SPOTIFY_API, { url: q })],
   ["sayan", (q) => askApi(SAYAN_API, { query: q })],
-  ["rabbit", (q) => askApi(RABBIT_API, { q })],
 ];
 
 async function findSong(query) {
