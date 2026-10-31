@@ -80,3 +80,30 @@ Module({ command: "apiexample", package: "eliteapi", description: "Test the Elit
     return data?.result ?? data;
   });
 });
+
+
+// Additional EliteProTech endpoints requested for utility access.
+Module({ command: "sps", aliases: ["spotifysearch"], package: "eliteapi", description: "Search Spotify through EliteProTech", usage: ".sps song name" })(async (m, q) => {
+  const query = clean(q); if (!query) return need(m, false, ".sps song name");
+  await reply(m, "𝐒ᴘᴏᴛɪғʏ 𝐒ᴇᴀʀᴄʜ", () => getApi("/search/sps", { query, q: query }));
+});
+
+Module({ command: "ytmp3", aliases: ["ytsearchmp3"], package: "eliteapi", description: "Use EliteProTech YouTube MP3 search", usage: ".ytmp3 song name or YouTube URL" })(async (m, q) => {
+  const query = clean(q); if (!query) return need(m, false, ".ytmp3 song name or YouTube URL");
+  await reply(m, "𝐘ᴏᴜTᴜʙᴇ 𝐌ᴘ𝟑 𝐀ᴘɪ", () => getApi("/download/ytmp3", { q: query }));
+});
+
+Module({ command: "ytmp4", aliases: ["ytvideo"], package: "eliteapi", description: "Fetch an EliteProTech YouTube MP4 response", usage: ".ytmp4 YouTube URL" })(async (m, q) => {
+  const url = clean(q); if (!/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(url)) return need(m, false, ".ytmp4 YouTube URL");
+  await reply(m, "𝐘ᴏᴜTᴜʙᴇ 𝐌ᴘ𝟒", () => getApi("/download/ytmp4", { url }));
+});
+
+Module({ command: "spotifydl", aliases: ["spdl"], package: "eliteapi", description: "Download a Spotify URL through EliteProTech", usage: ".spotifydl Spotify URL" })(async (m, q) => {
+  const url = clean(q); if (!/^https?:\/\/(open|play)\.spotify\.com\//i.test(url)) return need(m, false, ".spotifydl Spotify URL");
+  await reply(m, "𝐒ᴘᴏᴛɪғʏ 𝐃ᴏᴡɴʟᴏᴀᴅ", () => getApi("/download/spotify", { url }));
+});
+
+Module({ command: "facebookdl", aliases: ["fbdl"], package: "eliteapi", description: "Download a public Facebook video through EliteProTech", usage: ".facebookdl Facebook URL" })(async (m, q) => {
+  const url = clean(q); if (!/^https?:\/\/(www\.)?facebook\.com\//i.test(url)) return need(m, false, ".facebookdl Facebook URL");
+  await reply(m, "𝐅ᴀᴄᴇʙᴏᴏᴋ 𝐃ᴏᴡɴʟᴏᴀᴅ", () => getApi("/download/facebook", { url }));
+});

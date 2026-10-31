@@ -7,7 +7,6 @@ import yts from "yt-search";
 import { File } from "megajs";
 import { promisify } from "util";
 import { songdl } from "./bin/ytmp3.js";
-import { rabbitAudio } from "./bin/rabbit.js";
 import stream from "stream";
 import { fileURLToPath } from "url";
 import { Module } from "../lib/plugins.js";
@@ -165,129 +164,7 @@ async function handleSongDownload(videoUrl, meta, message) {
   }
 }
 
-// ─── Rabbit API Download (rabbitapi.zone.id /api/play & /api/song) ───────────
-
-async function fetchRabbitMp3(url, tries = 5) {
-  let lastErr;
-  for (let i = 1; i <= tries; i++) {
-    try {
-      const res = await axios.get(url, {
-        responseType: "arraybuffer",
-        timeout: 90_000,
-        headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36" },
-        maxContentLength: 100 * 1024 * 1024,
-      });
-      const buf = Buffer.from(res.data);
-      if (buf.length < 20_000) throw new Error(`file too small (${buf.length} bytes)`);
-      return buf;
-    } catch (err) {
-      lastErr = err;
-      console.error(`[RABBIT:DL] try ${i}/${tries} failed: ${err?.message || err} → ${url}`);
-      if (i < tries) await new Promise((r) => setTimeout(r, 3000));
-    }
-  }
-  throw lastErr;
-}
-
-async function handleRabbitDownload(endpoint, input, message) {
-  const sock = message.conn;
-  const from = message.from;
-
-  const r = await rabbitAudio(endpoint, input);
-  const title = r.title || "audio";
-  console.log(`[RABBIT] ${endpoint} → ${title} | ${r.downloadUrl || "(buffer)"}`);
-
-  // 1) get the mp3 first (so we never show a title card with no song)
-  let audioBuffer = r.audioBuffer;
-  if (!audioBuffer) {
-    try {
-      audioBuffer = await fetchRabbitMp3(r.downloadUrl);
-    } catch (err) {
-      await message.send(
-        `🎵 *${title}*\n\n⚠️ MP3 download failed (${err?.message || "error"}).\n🔗 ${r.downloadUrl}`
-      );
-      return;
-    }
-  }
-
-  // 2) info card (only if API gave a thumbnail)
-  if (r.thumbnail) {
-    try {
-      await sock.sendMessage(
-        from,
-        {
-          image: { url: r.thumbnail },
-          caption:
-            `🎵 *${title}*\n` +
-            (r.author ? `👤 ${r.author}\n` : "") +
-            (r.duration ? `⏱ ${r.duration}\n` : "") +
-            `\n─【 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 】─`,
-        },
-        { quoted: message.raw }
-      );
-    } catch (_) { /* thumbnail is optional */ }
-  }
-
-  // 3) send audio; if WhatsApp rejects it, send as a document instead
-  try {
-    await sock.sendMessage(
-      from,
-      { audio: audioBuffer, mimetype: "audio/mpeg", ptt: false, fileName: `${title}.mp3` },
-      { quoted: message.raw }
-    );
-  } catch (err) {
-    console.error("[RABBIT:SEND] audio failed, sending as document:", err?.message || err);
-    await sock.sendMessage(
-      from,
-      { document: audioBuffer, mimetype: "audio/mpeg", fileName: `${title}.mp3` },
-      { quoted: message.raw }
-    );
-  }
-}
-
 // ─── Commands ─────────────────────────────────────────────────────────────────
-
-// song / yta / ytmp3 / play now live in play.js (Audio / Video button card)
-for (const [cmd, desc] of []) {
-  Module({ command: cmd, package: "downloader", description: desc })(
-    async (message, match) => {
-      if (!match)
-        return message.send(`_Usage: .${cmd} <song name or YouTube URL>_`);
-
-      const input = match.trim();
-
-      // .play / .song → Rabbit API first (accepts song name or YouTube URL)
-      if (cmd === "play" || cmd === "song") {
-        try {
-          await message.react("⏳");
-          await handleRabbitDownload(cmd, input, message);
-          await message.react("✅");
-          return;
-        } catch (err) {
-          console.error(`[${cmd.toUpperCase()}:RABBIT]`, err?.message || err);
-          // API down / bad response → fall back to the old YouTube flow below
-        }
-      }
-
-      try {
-        if (isYouTubeUrl(input)) {
-          // Direct URL/ID → skip search, download right away
-          const id  = extractVideoId(input) ?? input;
-          const url = toYtUrl(id);
-          await handleSongDownload(url, null, message);
-        } else {
-          // Text query → search → show carousel
-          await message.send(`🔍 Searching: *${input}*`);
-          const videos = await searchYT(input, 8);
-          await sendSongCarousel(videos, message);
-        }
-      } catch (err) {
-        console.error(`[${cmd.toUpperCase()}]`, err?.message || err);
-        await message.send(`⚠️ Error: ${err?.message || "Unknown error"}`);
-      }
-    }
-  );
-}
 
 // ─── Interactive Response Handler (carousel PLAY tap) ─────────────────────────
 
