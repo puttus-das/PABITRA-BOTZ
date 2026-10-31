@@ -38,10 +38,10 @@
     "pino": "^10.1.0",
     "qs": "^6.14.0",
     "tough-cookie": "^6.0.0",
-    "uuid": "^13.0.0",
-    "yt-search": "latest"
+  "uuid": "^13.0.0",
+  "yt-search": "latest"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   }
 }

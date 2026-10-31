@@ -1,0 +1,66 @@
+{
+  "name": "pabitra-botz",
+  "description": "PABITRA-BOT V50 WhatsApp and Telegram bot",
+  "repository": "https://github.com/puttus-das/PABITRA-BOTZ",
+  "logo": "https://raw.githubusercontent.com/puttus-das/PABITRA-BOTZ/main/plugins/bin/tg_dp.jpg",
+  "keywords": ["whatsapp", "telegram", "baileys", "nodejs"],
+  "stack": "heroku-24",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "BOT_TOKEN_TELEGRAM": {
+      "description": "Telegram bot token from @BotFather",
+      "required": true
+    },
+    "TG_GROUP_ID": {
+      "description": "Telegram group ID, for example -1001234567890",
+      "required": false
+    },
+    "TG_GROUP_LINK": {
+      "description": "Telegram group invite link",
+      "value": "https://t.me/PABITRA_BOTZ"
+    },
+    "TG_ADMIN_IDS": {
+      "description": "Comma-separated Telegram admin user IDs",
+      "required": false
+    },
+    "BOT_PREFIX": {
+      "description": "Command prefix",
+      "value": "."
+    },
+    "OWNER_NUMBER": {
+      "description": "Owner phone number with country code, without +",
+      "value": "919641092392"
+    },
+    "SUDO": {
+      "description": "Sudo phone number with country code, without +",
+      "value": "919641092392"
+    },
+    "PAIR_CODE": {
+      "description": "Pairing code used by the WhatsApp pairing endpoint",
+      "value": "POBIPAUL"
+    },
+    "TIMEZONE": {
+      "value": "Asia/Kolkata"
+    },
+    "WORK_TYPE": {
+      "value": "public"
+    },
+    "AUTH_DIR": {
+      "description": "Writable runtime directory; use persistent storage for production sessions",
+      "value": "/tmp/auth"
+    },
+    "NODE_ENV": {
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  }
+}
