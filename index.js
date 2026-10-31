@@ -28,6 +28,17 @@ const app = express();
 // limit body size to 1mb
 app.use(bodyParser.json({ limit: "1mb" }));
 
+// Vercel frontend access. Set WEBSITE_URL in Heroku for a locked-down origin;
+// the wildcard fallback keeps the API usable before the frontend is deployed.
+const websiteOrigin = process.env.WEBSITE_URL || "*";
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", websiteOrigin);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 // Ensure sessions directory exists
 const SESSIONS_DIR = path.join(process.cwd(), "sessions");
 await fs.mkdirp(SESSIONS_DIR);

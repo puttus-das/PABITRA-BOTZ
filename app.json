@@ -53,6 +53,10 @@
       "description": "Writable runtime directory; use persistent storage for production sessions",
       "value": "/tmp/auth"
     },
+    "WEBSITE_URL": {
+      "description": "Vercel website origin, for example https://pabitra-botz.vercel.app",
+      "required": false
+    },
     "NODE_ENV": {
       "value": "production"
     }

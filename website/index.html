@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07121f" />
+    <meta name="description" content="PABITRA-BOT V50 WhatsApp and Telegram control center" />
+    <title>PABITRA-BOT V50</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="nav shell">
+      <a class="brand" href="#top"><img src="/assets/bot-dp.jpg" alt="PABITRA-BOT DP" /><span>PABITRA<span>-BOT</span></span></a>
+      <nav><a href="#pair">Pair</a><a href="#media">Media</a><a href="https://t.me/PABITRA_BOTZ" target="_blank" rel="noreferrer">Telegram</a></nav>
+    </header>
+
+    <main id="top">
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="eyebrow"><i></i> V50 CONTROL CENTER</p>
+          <h1>One bot.<br /><em>Every connection.</em></h1>
+          <p class="lead">Pair WhatsApp from Telegram, see live sessions, and keep your favourite PABITRA media in one clean control center.</p>
+          <div class="hero-actions"><a class="button button-primary" href="#pair">Generate pair code <span>↗</span></a><a class="button button-ghost" href="https://t.me/PABITRA_BOTZ" target="_blank" rel="noreferrer">Open Telegram</a></div>
+          <div class="mini-stats"><div><strong id="sessionCount">—</strong><span>active sessions</span></div><div><strong id="pluginCount">—</strong><span>plugins loaded</span></div><div><strong id="apiState">checking</strong><span>backend status</span></div></div>
+        </div>
+        <div class="hero-art"><div class="ring ring-one"></div><div class="ring ring-two"></div><div class="dp-card"><img src="/assets/bot-dp.jpg" alt="PABITRA-BOT" /><span class="online-dot"></span></div><div class="floating-chip chip-top">WHATSAPP / TELEGRAM</div><div class="floating-chip chip-bottom">MULTI-SESSION READY</div></div>
+      </section>
+
+      <section class="pair-section shell" id="pair">
+        <div class="section-label">01 / PAIR A NUMBER</div>
+        <div class="pair-grid">
+          <div><h2>Pair from the web.<br /><span>Confirm in WhatsApp.</span></h2><p>Enter a number with country code, for example <code>919812345678</code>. The same pairing engine is also available inside your Telegram group with <code>/pair +919812345678</code>.</p></div>
+          <form class="panel" id="pairForm"><label for="phone">WhatsApp number</label><div class="input-row"><span>+</span><input id="phone" inputmode="numeric" autocomplete="tel" placeholder="919812345678" required /><button class="button button-primary" type="submit">Get code</button></div><p class="form-note">Use digits only. Never share your pairing code.</p><div class="result" id="pairResult" hidden></div></form>
+        </div>
+      </section>
+
+      <section class="media-section shell" id="media">
+        <div class="section-heading"><div><div class="section-label">02 / PABITRA MEDIA</div><h2>Play the menu.</h2></div><p>Bot artwork, menu visuals and MP4 mixes from your project.</p></div>
+        <div class="media-grid"><article class="video-card featured"><video controls preload="metadata" poster="/assets/menu.jpg"><source src="/assets/videos/menu.mp4" type="video/mp4" /></video><div><span class="tag">MENU VIDEO</span><h3>PABITRA-BOT V50 menu</h3></div></article><article class="video-card"><video controls preload="metadata" poster="/assets/menu.jpg"><source src="/assets/videos/pabitra-mix-01.mp4" type="video/mp4" /></video><div><span class="tag">MP4 SONG</span><h3>PABITRA MIX 01</h3></div></article><article class="video-card"><video controls preload="metadata" poster="/assets/menu.jpg"><source src="/assets/videos/pabitra-mix-02.mp4" type="video/mp4" /></video><div><span class="tag">MP4 SONG</span><h3>PABITRA MIX 02</h3></div></article></div>
+      </section>
+
+      <section class="footer-cta shell"><img src="/assets/bot-dp.jpg" alt="PABITRA-BOT DP" /><div><p class="eyebrow"><i></i> CONNECTED BY PABITRA</p><h2>Your Telegram group is the pairing desk.</h2></div><a class="button button-ghost" href="https://t.me/PABITRA_BOTZ" target="_blank" rel="noreferrer">Join group ↗</a></section>
+    </main>
+    <footer class="shell footer"><span>© PABITRA-BOT V50</span><span>Heroku backend · Vercel frontend</span></footer>
+    <script src="/config.js"></script><script src="/app.js"></script>
+  </body>
+</html>
