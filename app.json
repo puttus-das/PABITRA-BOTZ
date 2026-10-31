@@ -43,6 +43,10 @@
       "description": "Pairing code used by the WhatsApp pairing endpoint",
       "value": "POBIPAUL"
     },
+    "SESSION_ID": {
+      "description": "Optional existing WhatsApp session identifier used by this Baileys bot",
+      "required": false
+    },
     "TIMEZONE": {
       "value": "Asia/Kolkata"
     },

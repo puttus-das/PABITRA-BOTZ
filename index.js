@@ -260,6 +260,17 @@ process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
 // ── Startup ────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || (await getPort({ port: 3000 }));
+const server = app.listen(PORT, () => {
+  console.log(`[app] 🚀 Server listening on port ${PORT}`);
+});
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`[app] ❌ Port ${PORT} is already in use`);
+  } else {
+    console.error("[app] Server error:", err.message);
+  }
+  process.exit(1);
+});
 
 (async function init() {
   try {
@@ -269,26 +280,14 @@ const PORT = process.env.PORT || (await getPort({ port: 3000 }));
 
     console.log("[app] DB ready, plugins loaded, sessions started");
 
-    const server = app.listen(PORT, () => {
-      console.log(`[app] 🚀 Server listening on port ${PORT}`);
-    });
-
     try {
       if (!process.env.OFFTELEBOT || process.env.OFFTELEBOT === "false") {
         await initializeTelegramBot(manager);
+        console.log("[app] Telegram bot initialization complete");
       }
     } catch (error) {
       console.error(error);
     }
-
-    server.on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.error(`[app] ❌ Port ${PORT} is already in use`);
-      } else {
-        console.error("[app] Server error:", err.message);
-      }
-      process.exit(1);
-    });
   } catch (err) {
     console.error("[app] Fatal initialization error:", err?.message || err);
     process.exit(1);
