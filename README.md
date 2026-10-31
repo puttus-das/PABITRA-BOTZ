@@ -9,6 +9,10 @@ Telegram Group: [PABITRA Telegram Group](https://t.me/PABITRA_BOTZ)
 
 [Open PABITRA-BOT Website](https://pabitra-botzdas.vercel.app/)
 
+[![Open Live Website](https://img.shields.io/badge/Open-Live%20Website-53e4ff?style=for-the-badge&logo=vercel&logoColor=white)](https://pabitra-botzdas.vercel.app/)
+
+[![Deploy Website to Vercel](https://img.shields.io/badge/Deploy-Website%20to%20Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ&root-directory=website&project-name=pabitra-botz-website)
+
 ## One-click deployment
 
 ### Deploy the bot backend to Heroku
