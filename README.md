@@ -5,6 +5,10 @@ Owner: +919641092392
 WhatsApp Channel: [PABITRA WhatsApp Channel](https://whatsapp.com/channel/0029Vb8RL4F1HspsNlYYOE3e)  
 Telegram Group: [PABITRA Telegram Group](https://t.me/PABITRA_BOTZ)
 
+## Live Website
+
+[Open PABITRA-BOT Website](https://pabitra-botzdas.vercel.app/)
+
 ## One-click deployment
 
 ### Deploy the bot backend to Heroku
