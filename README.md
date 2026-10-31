@@ -15,7 +15,7 @@ Telegram Group: [PABITRA Telegram Group](https://t.me/PABITRA_BOTZ)
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/puttus-das/PABITRA-BOTZ)
 
-This deploys the WhatsApp and Telegram bot backend. During deployment, set your own `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `TG_ADMIN_IDS`. Never commit tokens, passwords, or WhatsApp session files to GitHub.
+This deploys the WhatsApp and Telegram bot backend. The deploy form keeps only three Config Vars: `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL`. Never commit tokens, passwords, or WhatsApp session files to GitHub.
 
 ### Deploy the website to Vercel
 
