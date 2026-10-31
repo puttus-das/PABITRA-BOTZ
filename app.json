@@ -21,7 +21,7 @@
     },
     "WEBSITE_URL": {
       "description": "Vercel website origin, for example https://pabitra-botz.vercel.app",
-      "required": false
+      "required": true
     }
   },
   "formation": {
