@@ -1,0 +1,58 @@
+[
+ {
+  "file": "01.mp4",
+  "thumb": "01.jpg",
+  "width": 320,
+  "height": 180,
+  "duration": 24
+ },
+ {
+  "file": "02.mp4",
+  "thumb": "02.jpg",
+  "width": 1276,
+  "height": 718,
+  "duration": 20
+ },
+ {
+  "file": "03.mp4",
+  "thumb": "03.jpg",
+  "width": 1276,
+  "height": 718,
+  "duration": 14
+ },
+ {
+  "file": "04.mp4",
+  "thumb": "04.jpg",
+  "width": 1276,
+  "height": 720,
+  "duration": 15
+ },
+ {
+  "file": "05.mp4",
+  "thumb": "05.jpg",
+  "width": 1276,
+  "height": 718,
+  "duration": 20
+ },
+ {
+  "file": "06.mp4",
+  "thumb": "06.jpg",
+  "width": 1280,
+  "height": 590,
+  "duration": 33
+ },
+ {
+  "file": "07.mp4",
+  "thumb": "07.jpg",
+  "width": 1280,
+  "height": 720,
+  "duration": 21
+ },
+ {
+  "file": "08.mp4",
+  "thumb": "08.jpg",
+  "width": 1280,
+  "height": 720,
+  "duration": 28
+ }
+]
