@@ -1,14 +1,16 @@
-const API_URL = String(window.PABITRA_API_URL || "").replace(/\/$/, "");
+const DEFAULT_API_URL = "https://niloyy-4b8c614a0da0.herokuapp.com";
+const configuredApiUrl = String(window.PABITRA_API_URL || "").trim();
+const API_URL = String(
+  configuredApiUrl && !configuredApiUrl.includes("YOUR-HEROKU-APP")
+    ? configuredApiUrl
+    : DEFAULT_API_URL
+).replace(/\/$/, "");
 const $ = (selector) => document.querySelector(selector);
 const sessionCount = $("#sessionCount");
 const pluginCount = $("#pluginCount");
 const apiState = $("#apiState");
 
 async function refreshStatus() {
-  if (!API_URL || API_URL.includes("YOUR-HEROKU-APP")) {
-    apiState.textContent = "setup needed";
-    return;
-  }
   try {
     const [healthResponse, sessionsResponse, pluginsResponse] = await Promise.all([
       fetch(`${API_URL}/`),
@@ -34,10 +36,6 @@ $("#pairForm").addEventListener("submit", async (event) => {
   const button = event.currentTarget.querySelector("button");
   const phone = $("#phone").value.replace(/\D/g, "");
   result.hidden = false;
-  if (!API_URL || API_URL.includes("YOUR-HEROKU-APP")) {
-    result.innerHTML = "Set your Heroku URL in <code>website/config.js</code> first.";
-    return;
-  }
   if (phone.length < 6 || phone.length > 15) {
     result.textContent = "Enter a valid country-code number, for example 919812345678.";
     return;
