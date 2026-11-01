@@ -17,15 +17,15 @@ The backend is a long-running Node.js/Docker service. The same source can run on
 
 ### Recommended setup
 
-1. Choose one backend host and deploy the repository root. Heroku uses `Procfile`; Render uses [`render.yaml`](render.yaml); Railway uses [`railway.json`](railway.json); Koyeb and Oracle Cloud can build the included [`Dockerfile`](Dockerfile).
+1. Choose one backend host and deploy the repository root. Heroku uses `Procfile`; Render's persistent-disk setup is [`render.yaml`](render.yaml), while the sleep/ephemeral free preview is [`render-free.yaml`](render-free.yaml); Railway uses [`railway.json`](railway.json); Koyeb and Oracle Cloud can build the included [`Dockerfile`](Dockerfile).
 2. Configure the environment variables below in the provider dashboard. Do not commit tokens, pairing sessions, or database secrets.
 3. For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. On Oracle Cloud, use a persistent host directory/volume. Render's included blueprint uses a paid persistent disk.
 4. Deploy the frontend separately to Vercel using the website deployment button below. Set `website/config.js` to the deployed backend URL and set the backend's `WEBSITE_URL` to the Vercel site origin.
 
 ### Platform notes
 
-- **Heroku:** supported through `app.json` and `Procfile`. Standard dyno files are ephemeral, so a redeploy/replacement can lose local WhatsApp credentials. Keep a safe copy or use external durable storage; do not assume local files survive.
-- **Render:** [`render.yaml`](render.yaml) provisions a paid web service with a `/data` persistent disk. The free web service sleeps when idle and has no persistent disk, so it is not suitable for a continuously connected bot with local auth files.
+- **Heroku:** `app.json` defaults to an Eco web dyno. Heroku sleeps Eco web dynos after 30 minutes without web traffic, cycles dynos at least daily, and resets their local filesystem on restart. Code cannot disable those platform rules; 24/7 operation requires a paid always-on dyno. This bot now retries transient WhatsApp reconnects indefinitely by default, but Heroku still needs durable external storage if the WhatsApp login must survive a dyno replacement. See [Eco dyno hours](https://devcenter.heroku.com/articles/eco-dyno-hours) and [dyno restarts](https://devcenter.heroku.com/articles/dyno-restarts).
+- **Render:** [`render.yaml`](render.yaml) provisions a paid web service with a `/data` persistent disk. [`render-free.yaml`](render-free.yaml) is only a no-cost preview: it can sleep and its local auth/data are ephemeral, so expect to reconnect WhatsApp after some restarts.
 - **Railway:** deploy with the included Dockerfile and `railway.json`, then add a Railway Volume mounted at `/data`. The default free credit may not cover a continuously running service.
 - **Koyeb:** create a Docker web service from this repository and use the included Dockerfile. Configure `AUTH_DIR` and `DATA_DIR` to a durable volume if available on your plan. The free instance scales to zero, so it can disconnect the bot.
 - **Oracle Cloud:** create an Always Free VM where capacity is available, install Docker, clone this repository, then run the container with a host directory mounted at `/data`. Keep the VM patched and protect SSH credentials. Free VM availability and idle-reclamation policies apply.
@@ -33,7 +33,7 @@ The backend is a long-running Node.js/Docker service. The same source can run on
 
 ### Environment variables
 
-Set at least `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL` for Telegram integration and website CORS. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
+Set at least `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL` for Telegram integration and website CORS. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. Transient reconnects retry indefinitely by default; set `RECONNECT_LIMIT` only if you specifically want a finite cap. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
 
 ## Deploy the website to Vercel
 
@@ -73,7 +73,8 @@ docker run -d --name pabitra-bot --restart unless-stopped \
 
 - The repository root is the WhatsApp/Telegram Node.js backend.
 - `website/` is the static Vercel frontend.
-- `render.yaml` and `railway.json` provide deployment configuration for those platforms.
+- `render.yaml`, `render-free.yaml`, and `railway.json` provide deployment configuration for those platforms.
+- `package-lock.json` pins dependencies for `npm ci`; `.dockerignore` removes the unused website and documentation from backend image builds.
 - `Dockerfile` is the common container entry point for Docker, Koyeb, Railway, Render, and Oracle Cloud.
 - `Procfile` and `app.json` provide Heroku deployment metadata.
 

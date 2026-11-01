@@ -9,3 +9,7 @@ runtime
 data
 logs
 npm-debug.log*
+website
+*.md
+LICENSE
+plugins/bin/menu.mp4

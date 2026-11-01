@@ -233,13 +233,23 @@ app.get("/plugins", (_req, res) => {
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────────
 
+let shutdownStarted = false;
+
 // sequential shutdown with timeout guard
 async function gracefulShutdown(signal) {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
   console.log(`\n[app] Received ${signal} — shutting down...`);
   const timeout = setTimeout(() => {
     console.error("[app] Shutdown timed out — forcing exit");
     process.exit(1);
-  }, 15_000);
+  }, 25_000);
+
+  try {
+    server.close();
+  } catch (e) {
+    console.warn("[app] HTTP server close warning:", e?.message || e);
+  }
 
   try {
     await manager.stopAll();

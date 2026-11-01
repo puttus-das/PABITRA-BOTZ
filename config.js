@@ -26,6 +26,7 @@ const DB_URL = process.env.DATABASE_URL || "";
 const AUTH_DIR =
   process.env.SESSION_DIR || process.env.AUTH_DIR || path.join(process.cwd(), "sessions");
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
+const reconnectLimit = Number.parseInt(process.env.RECONNECT_LIMIT, 10);
 
 // Export config
 export default {
@@ -41,6 +42,10 @@ export default {
   timezone: process.env.TIMEZONE || "UTC",
   GIST_URL: process.env.GIST_URL || "",
   MONGODB_URI: process.env.MONGODB_URI || "",
+  RECONNECT_LIMIT:
+    Number.isInteger(reconnectLimit) && reconnectLimit > 0
+      ? reconnectLimit
+      : Number.POSITIVE_INFINITY,
   WORK_TYPE: process.env.WORK_TYPE || "public",
   STATUS_REACT: isTrue(process.env.STATUS_REACT) || false,
   AUTH_DIR,

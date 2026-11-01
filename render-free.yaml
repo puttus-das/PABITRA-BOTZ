@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: pabitra-bot-free
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: AUTH_DIR
+        value: /tmp/pabitra-sessions
+      - key: DATA_DIR
+        value: /tmp/pabitra-data
+      - key: BOT_TOKEN_TELEGRAM
+        sync: false
+      - key: TG_GROUP_ID
+        sync: false
+      - key: WEBSITE_URL
+        sync: false
