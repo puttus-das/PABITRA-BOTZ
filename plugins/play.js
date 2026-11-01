@@ -62,9 +62,13 @@ function rabbitResult(data) {
   return { ...result, audioUrl };
 }
 
-async function sendRabbitSong(message, query, route = "play") {
+async function getRabbitSong(query, route = "play") {
   const data = await rabbitGet(route, { q: query });
-  const song = rabbitResult(data);
+  return rabbitResult(data);
+}
+
+async function sendRabbitSong(message, query, route = "play") {
+  const song = await getRabbitSong(query, route);
   await message.conn.sendMessage(
     message.from,
     {
@@ -286,4 +290,4 @@ Module({
   }
 });
 
-export { searchVideo as searchEliteVideo, downloadEliteAudio };
+export { searchVideo as searchEliteVideo, downloadEliteAudio, getRabbitSong as searchRabbitSong };
