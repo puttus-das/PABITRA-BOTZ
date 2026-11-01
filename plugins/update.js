@@ -15,7 +15,7 @@ Module({
   if (!isOwner(message)) return message.send("_This command is for the owner only_");
   let stashed = false;
   try {
-    await message.send("⏳ _Checking GitHub for updates..._");
+    await message.send("⏳ _Checking for updates..._");
     const { stdout: dirtyFiles } = await execFileAsync("git", ["status", "--porcelain", "--untracked-files=no"], {
       cwd: process.cwd(),
       timeout: 30_000,
@@ -34,11 +34,14 @@ Module({
       timeout: 120_000,
       maxBuffer: 2 * 1024 * 1024,
     });
-    const summary = String(stdout || "").trim();
+    const summary = String(stdout || "");
+    const updated = /already up[- ]to[- ]date/i.test(summary)
+      ? "Repository is up to date."
+      : "Repository updated successfully.";
     const stashNote = stashed
       ? "\n\n🧳 _Local tracked changes were stashed safely before updating._"
       : "";
-    await message.send(`✅ ${summary || "Repository is up to date."}${stashNote}\n\n♻️ _Restarting the complete bot now..._`);
+    await message.send(`✅ ${updated}${stashNote}\n\n♻️ _Restarting the complete bot now..._`);
     setTimeout(() => process.exit(0), 1_500);
   } catch (error) {
     console.error("[update] git pull failed:", error?.message || error);
@@ -53,6 +56,6 @@ Module({
         console.error("[update] failed to restore pre-update stash:", restoreError?.message || restoreError);
       }
     }
-    await message.send(`❌ _Update failed; bot was not restarted._\n\n${error?.stderr || error?.message || "Unknown error"}`);
+    await message.send("❌ _Update failed; bot was not restarted._\n\n_Check the server logs for details._");
   }
 });

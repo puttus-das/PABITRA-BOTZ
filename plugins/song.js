@@ -1,6 +1,5 @@
 import fs from "fs";
 import axios from "axios";
-import fetch from "node-fetch";
 import os from "os";
 import path from "path";
 import yts from "yt-search";
@@ -288,47 +287,6 @@ Module({
   await message.send({ image: { url: results[0].thumbnail }, caption: reply });
 });
 
-/* ----------------- GitClone ----------------- */
-Module({
-  command: "gitclone",
-  package: "downloader",
-  description: "Download GitHub repository as zip",
-})(async (message, match) => {
-  const arg = (match || "").trim();
-  if (!arg)
-    return message.send(
-      "❌ Provide a GitHub link.\n\nExample:\n.gitclone https://github.com/username/repository"
-    );
-  try {
-    const link = arg.split(/\s+/)[0];
-    const regex = /github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?/i;
-    const m = link.match(regex);
-    if (!m) return message.send("⚠️ Invalid GitHub repository format.");
-    const [, username, repo] = m;
-    const zipUrl = `https://api.github.com/repos/${username}/${repo}/zipball`;
-    // Confirm repository exists
-    const head = await fetch(zipUrl, { method: "HEAD" });
-    if (!head.ok) return message.send("Repository not found or private.");
-    const filename = `${repo}.zip`;
-    await message.conn.sendMessage(
-      message.from,
-      {
-        document: { url: zipUrl },
-        fileName: filename,
-        mimetype: "application/zip",
-        caption: `GitHub: ${username}/${repo}`,
-      },
-      { quoted: message.raw }
-    );
-    await message.react("✅");
-  } catch (err) {
-    console.error("GitClone Error:", err);
-    await message.react("❌");
-    return message.send(
-      "❌ Failed to download repository. Please try again later."
-    );
-  }
-});
 /* ----------------- APK Downloader ----------------- */
 Module({
   command: "apk",
