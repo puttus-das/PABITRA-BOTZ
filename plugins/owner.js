@@ -33,7 +33,7 @@ Module({
   const buttons = [{
     name: "cta_url",
     buttonParamsJson: JSON.stringify({
-      display_text: "Contact Owner",
+      display_text: "━[ 𝐂ᴏɴᴛᴀᴄᴛ ]━",
       url: contactUrl,
       merchant_url: contactUrl,
     }),
