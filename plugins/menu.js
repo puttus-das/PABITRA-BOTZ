@@ -187,23 +187,19 @@ Module({
       }
     }
 
-    // buttons, one under the other: PING · OWNER · PAIR CODE (opens the Telegram group)
+    // Five requested actions on the menu card; all other commands remain in the list.
     const buttons = [
-      {
-        name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ɪɴɢ ]━", id: `${prefix}ping` }),
-      },
       {
         name: "cta_url",
         buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }),
       },
       {
         name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ 𝐈ɴғᴏ ]━", id: `${prefix}owner` }),
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ɪɴɢ ]━", id: `${prefix}ping` }),
       },
       {
-        name: "cta_url",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ᴀɪʀ 𝐂ᴏᴅᴇ ]━", url: pairUrl, merchant_url: pairUrl }),
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐀ᴜᴅɪᴏ ]━", id: `${prefix}audio` }),
       },
       {
         name: "quick_reply",
@@ -211,7 +207,7 @@ Module({
       },
       {
         name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐀ᴜᴅɪᴏ ]━", id: `${prefix}audio` }),
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐌ᴜsɪᴄ ]━", id: `${prefix}music` }),
       },
     ];
 
@@ -281,62 +277,20 @@ Module({
     };
 
     let sent = false;
-    // Sample-style location card with two quick buttons. Use the bot's own
-    // thumbnail instead of the unrelated ANU XMD image embedded in the sample.
-    try {
-      const locationCard = generateWAMessageFromContent(
-        message.from,
-        {
-          buttonsMessage: proto.Message.ButtonsMessage.create({
-            contentText: `${headerBox}\n\nTap a button below to check the bot.\nType ${prefix}menu all to view every command.`,
-            footerText: "© PABITRA-BOT",
-            headerType: 6,
-            buttons: [
-              {
-                buttonId: `${prefix}ping`,
-                buttonText: { displayText: "ᴘɪɴɢ ᯤ" },
-                type: 1,
-              },
-              {
-                buttonId: `${prefix}alive`,
-                buttonText: { displayText: "ᴀʟɪᴠᴇ ✆" },
-                type: 1,
-              },
-            ],
-            locationMessage: {
-              degreesLatitude: 0,
-              degreesLongitude: 0,
-              name: "👉🏻ᯓ★ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ★ᯓ👑",
-              address: "👑 PABITRA-BOT menu · choose an action below",
-              ...(getMenuThumb() ? { jpegThumbnail: getMenuThumb() } : {}),
-            },
-          }),
-        },
-        { quoted: message.gift, userJid: message.conn.user?.id }
-      );
-      await message.conn.relayMessage(message.from, locationCard.message, {
-        messageId: locationCard.key.id,
-      });
-      rememberCard(locationCard.key.id);
-      sent = true;
-    } catch (e) {
-      console.error("❌ Location-button menu failed, using interactive menu:", e?.message || e);
-    }
-
-    if (!sent && imageMessage) {
+    if (imageMessage) {
       try {
-        await relayCard(productHeader(), false);
+        await relayCard(plainHeader(), false);
         sent = true;
       } catch (e) {
-        console.error("❌ Product menu failed, trying image menu:", e?.message || e);
+        console.error("❌ Image menu failed, trying product card:", e?.message || e);
         try {
-          await relayCard(plainHeader(), false);
+          await relayCard(productHeader(), false);
           sent = true;
         } catch (e2) {
-          console.error("❌ Image menu failed:", e2?.message || e2);
+          console.error("❌ Product menu failed:", e2?.message || e2);
         }
       }
-    } else if (!sent) {
+    } else {
       try {
         await relayCard(plainHeader(), true);
         sent = true;
