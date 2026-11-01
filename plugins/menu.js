@@ -281,7 +281,49 @@ Module({
     };
 
     let sent = false;
-    if (imageMessage) {
+    // Sample-style location card with two quick buttons. Use the bot's own
+    // thumbnail instead of the unrelated ANU XMD image embedded in the sample.
+    try {
+      const locationCard = generateWAMessageFromContent(
+        message.from,
+        {
+          buttonsMessage: proto.Message.ButtonsMessage.create({
+            contentText: `${headerBox}\n\nTap a button below to check the bot.\nType ${prefix}menu all to view every command.`,
+            footerText: "© PABITRA-BOT",
+            headerType: 6,
+            buttons: [
+              {
+                buttonId: `${prefix}ping`,
+                buttonText: { displayText: "ᴘɪɴɢ ᯤ" },
+                type: 1,
+              },
+              {
+                buttonId: `${prefix}alive`,
+                buttonText: { displayText: "ᴀʟɪᴠᴇ ✆" },
+                type: 1,
+              },
+            ],
+            locationMessage: {
+              degreesLatitude: 0,
+              degreesLongitude: 0,
+              name: "👉🏻ᯓ★ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ★ᯓ👑",
+              address: "👑 PABITRA-BOT menu · choose an action below",
+              ...(getMenuThumb() ? { jpegThumbnail: getMenuThumb() } : {}),
+            },
+          }),
+        },
+        { quoted: message.gift, userJid: message.conn.user?.id }
+      );
+      await message.conn.relayMessage(message.from, locationCard.message, {
+        messageId: locationCard.key.id,
+      });
+      rememberCard(locationCard.key.id);
+      sent = true;
+    } catch (e) {
+      console.error("❌ Location-button menu failed, using interactive menu:", e?.message || e);
+    }
+
+    if (!sent && imageMessage) {
       try {
         await relayCard(productHeader(), false);
         sent = true;
@@ -294,7 +336,7 @@ Module({
           console.error("❌ Image menu failed:", e2?.message || e2);
         }
       }
-    } else {
+    } else if (!sent) {
       try {
         await relayCard(plainHeader(), true);
         sent = true;
