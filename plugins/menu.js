@@ -136,21 +136,65 @@ Module({
     const sendText = (text) =>
       message.conn.sendMessage(message.from, { text: text.trim() }, { quoted: message.gift });
 
-    // ".menu all" → full text list
+    // ".menu all" → retain the complete text list as a compatibility option.
     if (showAll) return await sendText(headerBox + "\n\n" + buildFullList() + footer);
 
-    // ".menu <package>" → that package only (or "not found")
-    if (arg) {
-      if (grouped[arg]) return await sendText(catBlock(arg) + footer);
+    const argParts = arg.split(/\s+/).filter(Boolean);
+    const firstArg = argParts[0] || "";
+    if (arg && firstArg !== "browse" && !grouped[firstArg]) {
       let t = `🍌 *${fancy("package not found")}: ${match}*\n\n*${fancy("available packages")}*:\n`;
       categories.forEach((c) => { t += `*┃ ◈ ${fancy(c)}*\n`; });
       return await sendText(t + footer);
     }
 
-    // ── default ".menu" → product card: random dp + title + $99999 + "100 items" + 3 buttons ──
+    // ── Menu cards: home actions or paginated category/command buttons ──
     const P = proto.Message.InteractiveMessage;
     const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
-    const bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
+    let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
+    const quickButton = (label, command) => ({
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({ display_text: label, id: `${prefix}${command}` }),
+    });
+    const pinnedButtons = [
+      quickButton("━[ 𝐏ɪɴɢ ]━", "ping"),
+      quickButton("━[ 𝐀ᴜᴅɪᴏ ]━", "audio"),
+    ];
+    let buttons;
+    if (!arg) {
+      buttons = [
+        { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }) },
+        ...pinnedButtons,
+        quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
+        quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
+        quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
+      ];
+    } else if (firstArg === "browse") {
+      const pageSize = 2;
+      const totalPages = Math.max(1, Math.ceil(categories.length / pageSize));
+      const requestedPage = Math.max(1, parseInt(argParts[1], 10) || 1);
+      const page = Math.min(requestedPage, totalPages);
+      const visible = categories.slice((page - 1) * pageSize, page * pageSize);
+      bodyText = `${headerBox}\n\n*${fancy("command categories")} — ${page}/${totalPages}*\n\n` +
+        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n") + footer;
+      buttons = visible.map((c) => quickButton(`━[ ${fancy(c)} ]━`, `menu ${c} 1`));
+      if (page > 1) buttons.push(quickButton("━[ 𝐏ʀᴇᴠ ]━", `menu browse ${page - 1}`));
+      if (page < totalPages) buttons.push(quickButton("━[ 𝐍ᴇxᴛ ]━", `menu browse ${page + 1}`));
+      buttons.push(...pinnedButtons);
+    } else {
+      const category = firstArg;
+      const commands = [...grouped[category]].sort((a, b) => a.localeCompare(b));
+      const pageSize = 2;
+      const totalPages = Math.max(1, Math.ceil(commands.length / pageSize));
+      const requestedPage = Math.max(1, parseInt(argParts[1], 10) || 1);
+      const page = Math.min(requestedPage, totalPages);
+      const visible = commands.slice((page - 1) * pageSize, page * pageSize);
+      bodyText = `${headerBox}\n\n*${fancy(category)} — ${fancy("commands")} ${page}/${totalPages}*\n\n` +
+        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n") + footer;
+      buttons = visible.map((c) => quickButton(`━[ ${fancy(c)} ]━`, c));
+      if (page > 1) buttons.push(quickButton("━[ 𝐏ʀᴇᴠ ]━", `menu ${category} ${page - 1}`));
+      if (page < totalPages) buttons.push(quickButton("━[ 𝐍ᴇxᴛ ]━", `menu ${category} ${page + 1}`));
+      buttons.push(...pinnedButtons);
+    }
 
     const bizNodes = [
       {
@@ -186,30 +230,6 @@ Module({
         console.error("❌ Menu image upload failed, using thumbnail card:", e?.message || e);
       }
     }
-
-    // Five requested actions on the menu card; all other commands remain in the list.
-    const buttons = [
-      {
-        name: "cta_url",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }),
-      },
-      {
-        name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ɪɴɢ ]━", id: `${prefix}ping` }),
-      },
-      {
-        name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐀ᴜᴅɪᴏ ]━", id: `${prefix}audio` }),
-      },
-      {
-        name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐕ɪᴅᴇᴏ ]━", id: `${prefix}musicvideo` }),
-      },
-      {
-        name: "quick_reply",
-        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐌ᴜsɪᴄ ]━", id: `${prefix}music` }),
-      },
-    ];
 
     // product-card header: dp + name + $99999 + "🛒 100 items"; the product link is the Telegram group
     const productHeader = () =>
