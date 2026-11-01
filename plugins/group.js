@@ -134,7 +134,7 @@ const GSTATUS_USAGE =
   "*┃ 🖼️ 𝐌ᴇᴅɪᴀ 𝐒ᴛᴀᴛᴜꜱ:*\n" +
   "*┃ 🔹 𝐑ᴇᴘʟʏ ᴛᴏ ɪᴍᴀɢᴇ/ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ 📸🎬🎵*\n" +
   "*┃   ➕ .gstatus ʏᴏᴜʀ ᴄᴀᴘᴛɪᴏɴ ✍️*\n\n\n\n" +
-  "*«© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 💜»*";
+  "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 
 async function sendGroupStatus(message, storyData) {
   if (!message.conn?.user?.id || typeof message.conn.waUploadToServer !== "function") {

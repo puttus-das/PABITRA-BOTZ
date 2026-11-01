@@ -23,7 +23,7 @@ function protectCard({ icon, title, on, mode, cmd, extra = "", usage }) {
     extra +
     `\n*┃ 📌 ${fancyText("Usage")}:*\n` +
     lines.map(([e, t]) => `*┃ ${e} ${t}*`).join("\n") +
-    `\n\n«© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 💜»`
+    `\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*`
   );
 }
 

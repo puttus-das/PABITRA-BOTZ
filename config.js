@@ -20,6 +20,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || "production";
 const isTrue = (x) => x === "true" || x === true;
 const BOT_NAME = process.env.BOT_NAME || "━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━";
 const OWNER_NAME = process.env.OWNER_NAME || "━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━";
+const BRAND_LINE = process.env.BRAND_LINE || "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 
 // Database URL
 const DB_URL = process.env.DATABASE_URL || "";
@@ -34,6 +35,7 @@ const reconnectLimit = Number.parseInt(process.env.RECONNECT_LIMIT, 10);
 export default {
   botName: BOT_NAME,
   ownerName: OWNER_NAME,
+  brandLine: BRAND_LINE,
   prefix: process.env.BOT_PREFIX || ".",
   owner: process.env.OWNER_NUMBER || "919641092392",
   sudo: process.env.SUDO || "919641092392",

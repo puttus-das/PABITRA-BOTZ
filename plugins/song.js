@@ -16,6 +16,7 @@ import {
   generateWAMessageFromContent,
   prepareWAMessageMedia,
 } from "baileys";
+import config from "../config.js";
 
 const pipeline = promisify(stream.pipeline);
 const __filename = fileURLToPath(import.meta.url);
@@ -53,6 +54,7 @@ async function sendSongCarousel(videos, message) {
   const sock = message.conn;
   const from = message.from;
   const cards = [];
+  let heroThumbnail = null;
 
   for (const v of videos) {
     let imageMessage;
@@ -60,6 +62,10 @@ async function sendSongCarousel(videos, message) {
     const thumb = v.thumbnail || v.image;
     if (thumb) {
       try {
+        if (!heroThumbnail && /^https?:\/\//i.test(thumb)) {
+          const thumbRes = await axios.get(thumb, { responseType: "arraybuffer", timeout: 10_000 });
+          heroThumbnail = Buffer.from(thumbRes.data);
+        }
         const media = await prepareWAMessageMedia(
           { image: { url: thumb } },
           { upload: sock.waUploadToServer }
@@ -81,7 +87,7 @@ async function sendSongCarousel(videos, message) {
           `👤 ${v.author?.name || "Unknown"}`,
       }),
       footer: proto.Message.InteractiveMessage.Footer.create({
-        text: "─【 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 】─",
+        text: config.brandLine,
       }),
       header: proto.Message.InteractiveMessage.Header.create({
         hasMediaAttachment: !!imageMessage,
@@ -122,6 +128,16 @@ async function sendSongCarousel(videos, message) {
               proto.Message.InteractiveMessage.CarouselMessage.create({
                 cards,
               }),
+            contextInfo: {
+              externalAdReply: {
+                title: config.botName,
+                body: config.brandLine,
+                ...(heroThumbnail ? { thumbnail: heroThumbnail } : {}),
+                mediaType: 1,
+                renderLargerThumbnail: true,
+                showAdAttribution: false,
+              },
+            },
           }),
         },
       },

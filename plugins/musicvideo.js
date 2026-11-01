@@ -6,7 +6,7 @@ import { Module } from "../lib/plugins.js";
 // Put your Bangla/any music videos in plugins/bin/music-videos/ (mp4, mkv, webm, mov, 3gp).
 // Every tap on the menu's Video button (or .musicvideo) sends one random video from there.
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin", "music-videos");
-const CAPTION = "*━[ 𝐕ɪᴅᴇᴏ ]━*\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+const CAPTION = "*━[ 𝐕ɪᴅᴇᴏ ]━*\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const EXT = /\.(mp4|mkv|webm|mov|3gp)$/i;
 const MAX_BYTES = 95 * 1024 * 1024;
 let lastPick = "";

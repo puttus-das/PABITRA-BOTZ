@@ -18,7 +18,7 @@ async function reply(message, title, work) {
     await message.react?.("⏳");
     const result = await work();
     const output = short(result);
-    await message.conn.sendMessage(message.from, { text: `*${title}*\n\n${output}\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ` }, { quoted: message.gift });
+    await message.conn.sendMessage(message.from, { text: `*${title}*\n\n${output}\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*` }, { quoted: message.gift });
     await message.react?.("✅");
   } catch (e) {
     console.error(`[eliteapi:${title}]`, e?.message || e);

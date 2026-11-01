@@ -15,7 +15,7 @@ Module({
     if (data && data.data && data.data[0]) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.data[0].urls.original },
-        caption: "> Here is your loli anime image! 💫\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your loli anime image! 💫\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");
@@ -52,7 +52,7 @@ Module({
     if (data && data.url) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.url },
-        caption: "> Here is your waifu anime image! 💫\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your waifu anime image! 💫\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");
@@ -89,7 +89,7 @@ Module({
     if (data && data.url) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.url },
-        caption: "> Here is your neko anime image! 🐱\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your neko anime image! 🐱\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");
@@ -126,7 +126,7 @@ Module({
     if (data && data.url) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.url },
-        caption: "> Here is your Megumin anime image! 💫\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your Megumin anime image! 💫\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");
@@ -163,7 +163,7 @@ Module({
     if (data && data.images && data.images[0]) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.images[0].url },
-        caption: "> Here is your maid anime image! 💫\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your maid anime image! 💫\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");
@@ -386,7 +386,7 @@ Module({
     if (data && data.url) {
       await message.conn.sendMessage(message.from, {
         image: { url: data.url },
-        caption: "> Here is your Shinobu anime image! 🦋\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        caption: "> Here is your Shinobu anime image! 🦋\n\n*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       });
     } else {
       await message.send("Error: Could not fetch image from API.");

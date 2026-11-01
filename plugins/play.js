@@ -11,7 +11,7 @@ import { Module } from "../lib/plugins.js";
 const BASE = (process.env.ELITE_API_BASE || "https://eliteprotech-apis.zone.id").replace(/\/+$/, "");
 const RABBIT_BASE = (process.env.RABBIT_API_BASE || "https://rabbitapi.zone.id").replace(/\/+$/, "");
 const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36";
-const CAPTION = "© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+const CAPTION = "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const clean = (value) => String(value || "").trim();
 ffmpeg.setFfmpegPath(ffmpegPath.path);
 

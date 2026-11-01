@@ -11,7 +11,7 @@ import { gift } from "../lib/serialize.js";
 import { fancyText } from "../lib/fancy.js";
 import { getRandomWelcome } from "../lib/welcomeVideos.js";
 
-const FOOT = "*«© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 💜»*";
+const FOOT = "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const toggleMsg = (what, on) =>
   `*${on ? "✅" : "❌"} ${fancyText(`${what} ${on ? "Enabled" : "Disabled"} for this Group`)}*\n\n${FOOT}`;
 const statusMsg = (what, on) =>
@@ -357,7 +357,7 @@ Module({ on: "group-participants.update" })(async (_msg, event, conn) => {
           action === "promote"
             ? `爱 👑 𝐏ʀᴏᴍᴏᴛᴇᴅ ᴛᴏ 𝐀ᴅᴍɪɴ 爱\n\n` +
               `爱 ${targetText} ɪs ɴᴏᴡ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ 爱\n\n` +
-              `爱 «© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ» 爱`
+              `爱 *━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━* 爱`
             : `爱 〔 𝐀ᴅᴍɪɴ 𝐄ᴠᴇɴᴛ 〕 爱\n\n` +
               `爱 ${actorText} 𝐡ᴀs ᴅᴇᴍᴏᴛᴇᴅ ${targetText} 爱\n\n` +
               `爱 𝐆ʀᴏᴜᴘ: ${gName} 爱`;

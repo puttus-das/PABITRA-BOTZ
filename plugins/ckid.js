@@ -49,7 +49,7 @@ Module({
       return await sendButtons(message.client, message.jid, {
         title: "📊 Group Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Group ID:*\n\`${id}\``,
-        footer: "Powered by 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ" ,
+        footer: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" ,
         buttons: [
           {
             name: "cta_copy",
@@ -84,7 +84,7 @@ Module({
       return await sendButtons(message.client, message.jid, {
         title: "📢 Channel Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Channel ID:*\n\`${id}\``,
-        footer: "Powered by 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        footer: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
         buttons: [
           {
             name: "cta_copy",

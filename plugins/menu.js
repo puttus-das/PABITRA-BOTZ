@@ -192,7 +192,7 @@ Module({
       `*┃  ✦ ᴜᴘᴛɪᴍᴇ    ➤ ${MB(runtime(process.uptime()))}*\n` +
       `*┃  ✦ ᴄᴏᴍᴍᴀɴᴅs ➤ ${MB(totalCmds)}*\n` +
       `*┃  ✦ ʀᴀᴍ       ➤ ${MB(ram)}*`;
-    const footer = `\n\n> © ${name}\n*~_Made with love by ${name}_~*`;
+    const footer = `\n\n${config.brandLine}`;
 
     const sendText = (text) =>
       message.conn.sendMessage(message.from, { text: text.trim() }, { quoted: message.gift });
@@ -208,13 +208,7 @@ Module({
       return await sendText(t + footer);
     }
 
-    // Randomly alternate between the new location-buttons menu and the previous
-    // interactive button menu. Category browsing always keeps pagination.
-    if (!arg) {
-      if (Math.random() < 0.5) return await sendLegacyButtonsMenu(message);
-    }
-
-    // ── Menu cards: home actions or paginated category/command buttons ──
+    // ── Screenshot-style product menu or paginated category buttons ──
     const P = proto.Message.InteractiveMessage;
     const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
     let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
@@ -229,14 +223,9 @@ Module({
     let buttons;
     if (!arg) {
       buttons = [
+        quickButton("ᴘɪɴɢ ᯤ", "ping"),
+        quickButton("ᴀʟɪᴠᴇ ✆", "alive"),
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: config.ownerName, url: ownerUrl, merchant_url: ownerUrl }) },
-        ...pinnedButtons,
-        quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
-        quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
-        quickButton("━[ 𝐀ɪ ]━", "gpt"),
-        quickButton("━[ 𝐆ᴀᴍᴇ ]━", "game"),
-        quickButton("━[ 𝐑ᴀɴᴋ ]━", "rank"),
-        quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
       ];
     } else if (firstArg === "browse") {
       const pageSize = 2;
@@ -337,7 +326,7 @@ Module({
               messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
               interactiveMessage: P.create({
                 body: P.Body.create({ text: bodyText }),
-                footer: P.Footer.create({ text: name }),
+                footer: P.Footer.create({ text: config.brandLine }),
                 header,
                 contextInfo: useThumbCard
                   ? {
@@ -369,12 +358,12 @@ Module({
     let sent = false;
     if (imageMessage) {
       try {
-        await relayCard(plainHeader(), false);
+        await relayCard(!arg ? productHeader() : plainHeader(), false);
         sent = true;
       } catch (e) {
-        console.error("❌ Image menu failed, trying product card:", e?.message || e);
+        console.error("❌ Primary menu card failed, trying fallback card:", e?.message || e);
         try {
-          await relayCard(productHeader(), false);
+          await relayCard(!arg ? plainHeader() : productHeader(), false);
           sent = true;
         } catch (e2) {
           console.error("❌ Product menu failed:", e2?.message || e2);
@@ -467,7 +456,7 @@ Module({
 `;
     await message.conn.sendMessage(message.from, {
       image: fs.readFileSync(pickMenuImg()),
-      caption: ctx + `\n> © ${name}`,
+      caption: ctx + `\n${config.brandLine}`,
     });
   } catch (err) {
     console.error("❌ Alive command error:", err);

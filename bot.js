@@ -70,10 +70,12 @@ export default async function initializeTelegramBot(manager) {
       { command: "song", description: fancyText("Send a song (direct audio)") },
       { command: "music", description: fancyText("Direct song (name or Spotify link)") },
       { command: "id", description: fancyText("Your Telegram ID") },
+      { command: "tagall", description: fancyText("Mention known group members") },
     ])
     .catch(() => {});
 
   const pairCooldown = new Map();
+  const tgGroupUsers = new Map();
 
   // ── HELPER UTILITIES & STYLING ────────────────────────────────────────────────
   const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -137,6 +139,39 @@ export default async function initializeTelegramBot(manager) {
   const f = (text) => String(text).split(/(<[^>]*>)/g).map((part) =>
     part.startsWith("<") && part.endsWith(">") ? part : fancyText(part)
   ).join("");
+
+  function rememberTelegramUser(msg) {
+    if (!msg?.chat || msg.chat.type === "private" || !msg.from || msg.from.is_bot) return;
+    const key = String(msg.chat.id);
+    const users = tgGroupUsers.get(key) || new Map();
+    users.set(String(msg.from.id), {
+      id: String(msg.from.id),
+      name: [msg.from.first_name, msg.from.last_name].filter(Boolean).join(" ") || msg.from.username || "Member",
+    });
+    tgGroupUsers.set(key, users);
+  }
+
+  async function sendTelegramTagall(msg, chatId, replyId) {
+    if (isPrivate(msg)) return redirectToGroup(chatId, replyId);
+    if (!isAllowedGroup(msg)) return true;
+    if (!(await isAdmin(msg))) {
+      await safeReply(chatId, `🚫 <b>${f("admins only")}</b>`, { reply_to_message_id: replyId });
+      return true;
+    }
+    const users = tgGroupUsers.get(String(chatId)) || new Map();
+    if (!users.size) {
+      await safeReply(chatId, `ℹ️ ${f("No known members yet. Members must send at least one message first.")}`, { reply_to_message_id: replyId });
+      return true;
+    }
+    const mentions = [...users.values()]
+      .map((user) => `<a href="tg://user?id=${user.id}">${esc(user.name)}</a>`)
+      .join(" ");
+    await safeReply(chatId, `👥 <b>${f("tagall")}</b>\n\n${mentions}`, {
+      reply_to_message_id: replyId,
+      disable_web_page_preview: true,
+    });
+    return true;
+  }
 
   // edits a photo's caption (falls back to editing plain text)
   function safeEditCaption(chatId, msgId, text, opts = {}) {
@@ -375,6 +410,7 @@ export default async function initializeTelegramBot(manager) {
       `🎶 <code>/song name</code> — ${f("direct song")}`,
       `🎵 <code>/music name or spotify link</code> — ${f("direct song")}`,
       `🆔 /id — ${f("your telegram id")}`,
+      `👥 /tagall — ${f("mention known group members")}`,
       `📋 /menu — ${f("this menu")}`,
     ].join("\n");
   }
@@ -665,7 +701,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const telegramPingText = (ping) => `*━( 𝐏ᴀʙɪᴛʀᴀ  ${ping}  𝐁ᴏᴛ⎯꯭̽💜 )━*`;
+  const telegramPingText = () => `━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━`;
   const canUse = (msg) => isPrivate(msg) || isAllowedGroup(msg);
   const safeName = (t, fallback) => (String(t || fallback).replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || fallback);
 
@@ -691,6 +727,7 @@ export default async function initializeTelegramBot(manager) {
         { text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" },
         { text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" },
       ],
+      [{ text: `👥 ${f("tagall")}`, callback_data: "cmd:tagall" }],
       [
         { text: `▶️ ${f("play")}`, callback_data: "cmd:play" },
         { text: `🎶 ${f("song")}`, callback_data: "cmd:song" },
@@ -811,6 +848,7 @@ export default async function initializeTelegramBot(manager) {
       return false; // allowed → the original handler below runs
     }
 
+    if (cmd === "tagall") return sendTelegramTagall(msg, chatId, replyId);
     if (!["start", "menu", "help", "ping", "id", "play", "song", "music"].includes(cmd)) return false;
     if (!canUse(msg)) return true;
 
@@ -823,8 +861,7 @@ export default async function initializeTelegramBot(manager) {
       return true;
     }
     if (cmd === "ping") {
-      const ping = Math.max(0, Date.now() - ((Number(msg.date) || Math.floor(Date.now() / 1000)) * 1000));
-      await safeReply(chatId, telegramPingText(ping), { reply_to_message_id: replyId });
+      await safeReply(chatId, telegramPingText(), { reply_to_message_id: replyId });
       return true;
     }
     if (cmd === "id") {
@@ -860,9 +897,9 @@ export default async function initializeTelegramBot(manager) {
     if (data.startsWith("cmd:")) {
       const what = data.slice(4);
       if (what === "menu") await sendDp(chatId, buildHelpMessage(), { reply_markup: menuKeyboard() });
+      else if (what === "tagall") await sendTelegramTagall(fake, chatId, replyId);
       else if (what === "ping") {
-        const ping = Math.max(0, Date.now() - ((Number(message.date) || Math.floor(Date.now() / 1000)) * 1000));
-        await safeReply(chatId, telegramPingText(ping));
+        await safeReply(chatId, telegramPingText());
       }
       else if (what === "pair")
         await safeReply(chatId, `🔑 <b>${f("send in the official group")}:</b>\n<code>/pair +919876543210</code>`);
@@ -1319,6 +1356,7 @@ export default async function initializeTelegramBot(manager) {
   // ── MESSAGE LISTENER ─────────────────────────────────────────────────────────
   tbot.on("message", async (msg) => {
     try {
+      rememberTelegramUser(msg);
       await handleCommand(msg);
     } catch (e) {
       console.error("[bot.js] handleCommand error:", e);

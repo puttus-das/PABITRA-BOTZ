@@ -3,10 +3,10 @@ import { Module } from "../lib/plugins.js";
 
 // ─── .video <name or YouTube URL> ─────────────────────────────────────────────
 // API: https://api.sayan-nexuswork.workers.dev/video?query=<text>
-// Sends ONLY the video (with the VCard quote + "© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ" caption). No extra messages.
+// Sends ONLY the video (with the VCard quote + "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" caption). No extra messages.
 
 const API = "https://api.sayan-nexuswork.workers.dev/video";
-const CAPTION = "© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+const CAPTION = "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const UA =
   "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Mobile Safari/537.36";
 

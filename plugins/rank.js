@@ -63,7 +63,7 @@ async function sendRankCard(message, rows, title) {
         messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
         interactiveMessage: P.create({
           body: P.Body.create({ text }),
-          footer: P.Footer.create({ text: "PABITRA-BOT • Group Leaderboard" }),
+          footer: P.Footer.create({ text: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" }),
           header: P.Header.create({ hasMediaAttachment: !!imageMessage, ...(imageMessage ? { imageMessage } : {}) }),
           nativeFlowMessage: P.NativeFlowMessage.create({ buttons: [
             { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🔄 REFRESH", id: ".rank" }) },
