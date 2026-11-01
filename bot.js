@@ -665,7 +665,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const telegramPingText = (ping) => `*━[ 𝐏ᴜᴛᴛᴜꜱ - ${ping} 𝐃ᴀs⎯꯭̽💜 ]━*`;
+  const telegramPingText = (ping) => `*━( 𝐏ᴀʙɪᴛʀᴀ  ${ping}  𝐁ᴏᴛ⎯꯭̽💜 )━*`;
   const canUse = (msg) => isPrivate(msg) || isAllowedGroup(msg);
   const safeName = (t, fallback) => (String(t || fallback).replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || fallback);
 
