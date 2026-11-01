@@ -9,6 +9,7 @@ import { Module } from "../lib/plugins.js";
 
 // EliteProTech is the only provider used by .play/.song now.
 const BASE = (process.env.ELITE_API_BASE || "https://eliteprotech-apis.zone.id").replace(/\/+$/, "");
+const RABBIT_BASE = (process.env.RABBIT_API_BASE || "https://rabbitapi.zone.id").replace(/\/+$/, "");
 const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36";
 const CAPTION = "© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
 const clean = (value) => String(value || "").trim();
@@ -32,6 +33,69 @@ async function eliteGet(path, params = {}, options = {}) {
     throw new Error(errorText(response.data, response.status));
   }
   return response;
+}
+
+async function rabbitGet(route, params = {}) {
+  const response = await axios.get(`${RABBIT_BASE}/api/${route}`, {
+    params,
+    timeout: 90_000,
+    headers: { "User-Agent": UA, Accept: "application/json" },
+    validateStatus: () => true,
+    maxContentLength: 120 * 1024 * 1024,
+  });
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(response.data?.message || response.data?.error || `RabbitAPI ${route} returned HTTP ${response.status}`);
+  }
+  if (response.data?.success === false || response.data?.status === false) {
+    throw new Error(response.data?.message || response.data?.error || `RabbitAPI ${route} failed`);
+  }
+  return response.data;
+}
+
+function rabbitResult(data) {
+  const result = data?.result;
+  if (!result || typeof result !== "object") throw new Error("RabbitAPI returned no song result");
+  const audioUrl = result.mp3 || result.audio || result.download || result.url;
+  if (typeof audioUrl !== "string" || !/^https:\/\//i.test(audioUrl)) {
+    throw new Error("RabbitAPI did not return a valid audio link");
+  }
+  return { ...result, audioUrl };
+}
+
+async function sendRabbitSong(message, query, route = "play") {
+  const data = await rabbitGet(route, { q: query });
+  const song = rabbitResult(data);
+  await message.conn.sendMessage(
+    message.from,
+    {
+      audio: { url: song.audioUrl },
+      mimetype: "audio/mpeg",
+      ptt: false,
+      fileName: `${String(song.title || query).replace(/[\\/:*?"<>|\r\n]/g, " ").slice(0, 90) || "song"}.mp3`,
+      caption: `🎵 *${song.title || query}*${song.duration ? `\n⏱ ${song.duration}` : ""}\n${CAPTION}`,
+    },
+    { quoted: message.gift }
+  );
+}
+
+async function sendRabbitVideo(message, videoUrl) {
+  if (!/^https?:\/\/(?:www\.)?(?:youtube\.com|m\.youtube\.com|youtu\.be)\//i.test(videoUrl)) {
+    throw new Error("Please provide a YouTube or youtu.be URL.");
+  }
+  const data = await rabbitGet("dwnall", { url: videoUrl });
+  const result = data?.result;
+  if (!result || typeof result !== "object") throw new Error("RabbitAPI returned no video result");
+  const videoUrlToSend = [result.hd, result.ss, result.video, result.url]
+    .find((value) => typeof value === "string" && /^https:\/\//i.test(value));
+  if (!videoUrlToSend) throw new Error("RabbitAPI did not return an HD/SD video link");
+  await message.conn.sendMessage(
+    message.from,
+    {
+      video: { url: videoUrlToSend },
+      caption: `🎬 *${result.title || "YouTube video"}*\n${CAPTION}`,
+    },
+    { quoted: message.gift }
+  );
 }
 
 function isHttp(value) {
@@ -136,20 +200,68 @@ async function sendSong(message, query) {
 
 Module({
   command: "play",
-  aliases: ["song", "yta"],
+  aliases: ["yta"],
   package: "downloader",
-  description: "Search YouTube and download a song through EliteProTech",
+  description: "Search and download a song through RabbitAPI",
 })(async (message, match) => {
   const query = clean(match);
   const reply = (text) => message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
   if (!query) return reply(`*${config.prefix}play <song name or YouTube URL>*`);
   try {
     await message.react?.("🎵");
-    await sendSong(message, query);
+    try {
+      await sendRabbitSong(message, query, "play");
+    } catch (rabbitError) {
+      console.warn("[RABBIT:PLAY] Falling back to EliteProTech:", rabbitError?.message || rabbitError);
+      await sendSong(message, query);
+    }
     await message.react?.("✅");
   } catch (error) {
-    console.error("[ELITE:PLAY]", error?.message || error);
-    await reply(`⚠️ Elite music download failed: ${error?.message || "try again later"}\n\n${CAPTION}`);
+    console.error("[RABBIT:PLAY]", error?.message || error);
+    await reply(`⚠️ Song download failed: ${error?.message || "try again later"}\n\n${CAPTION}`);
+  }
+});
+
+Module({
+  command: "song",
+  package: "downloader",
+  description: "Search and download a song using RabbitAPI",
+  usage: ".song <song name or YouTube URL>",
+})(async (message, match) => {
+  const query = clean(match);
+  if (!query) return message.send(`*${config.prefix}song <song name or YouTube URL>*`);
+  try {
+    await message.react?.("🎵");
+    try {
+      await sendRabbitSong(message, query, "song");
+    } catch (rabbitError) {
+      console.warn("[RABBIT:SONG] Falling back to EliteProTech:", rabbitError?.message || rabbitError);
+      await sendSong(message, query);
+    }
+    await message.react?.("✅");
+  } catch (error) {
+    console.error("[RABBIT:SONG]", error?.message || error);
+    await message.send(`⚠️ Song download failed: ${error?.message || "try again later"}\n\n${CAPTION}`);
+  }
+});
+
+Module({
+  command: "dwnall",
+  aliases: ["rabbitvideo"],
+  package: "downloader",
+  description: "Download SD/HD video from a YouTube URL using RabbitAPI",
+  usage: ".dwnall <YouTube URL>",
+})(async (message, match) => {
+  const url = clean(match);
+  if (!url) return message.send(`*${config.prefix}dwnall <YouTube URL>*`);
+  try {
+    await message.react?.("🎬");
+    await sendRabbitVideo(message, url);
+    await message.react?.("✅");
+  } catch (error) {
+    console.error("[RABBIT:DWNLALL]", error?.message || error);
+    await message.send(`⚠️ Video download failed: ${error?.message || "try again later"}\n\n${CAPTION}`);
+    await message.react?.("❌");
   }
 });
 
