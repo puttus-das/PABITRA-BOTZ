@@ -20,11 +20,13 @@ const getMenuThumb = () => {
   try { _menuThumb = fs.readFileSync(f); } catch { _menuThumb = null; }
   return _menuThumb;
 };
-// random dp: plugins/bin/menu/*.jpg — a different image on every .menu
+// Prefer the current official PABITRA menu DP; retain the old pool as fallback.
 const MENU_DIR = path.join(__dirname, "bin", "menu");
+const officialMenuImgPath = path.join(MENU_DIR, "pabitra-bot-menu.jpg");
 let _lastMenuImg = "";
 const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
 const pickMenuImg = () => {
+  if (fs.existsSync(officialMenuImgPath)) return officialMenuImgPath;
   try {
     const all = fs.readdirSync(MENU_DIR).filter((x) => /\.(jpe?g|png)$/i.test(x));
     const pool = all.length > 1 ? all.filter((x) => x !== _lastMenuImg) : all;

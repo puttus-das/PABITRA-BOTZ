@@ -35,8 +35,8 @@ Module({
         locationMessage: {
           degreesLatitude: 0,
           degreesLongitude: 0,
-          name: "👉🏻ᯓ★ 𝐀ɴᴜ 𝐗ᴍᴅ𓂃 ࣪˖ ִֶָ👑🫀👈🏻",
-          address: "👑 𓆩֓⤹𝐓ⱶ֟ؖ۬꧊𝛆‌ -𝆭𝐁𝐎𝐒𝐒꧕༊!⤸֓𓆪🧿💗",
+          name: "PABITRA-BOT",
+          address: "Owner: PABITRA-PAUL | Contact: +91 96410 92392",
           jpegThumbnail: fs.readFileSync(thumbnailPath),
         },
       },
