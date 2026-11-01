@@ -58,7 +58,7 @@ async function sendLegacyButtonsMenu(message) {
   const menuText =
 `┌────〔 ✨ *${name}* ✨ 〕────┐
 │ 👋 ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ
-│ 👑 *ᴏᴡɴᴇʀ*    ➜ 𓆩֓⤹𝐓ⱶ֟ؖ۬꧊𝛆 -𝆭𝐁𝐎𝐒𝐒꧕༊!⤸֓𓆪🧿💗
+│ 👑 *ᴏᴡɴᴇʀ*    ➜ ${config.ownerName}
 │ ⚙️ *ᴘʀᴇғɪx*   ➜ ${config.prefix}
 │ 🔒 *ᴍᴏᴅᴇ*     ➜ ${isPublic ? "ᴘᴜʙʟɪᴄ" : "ᴘʀɪᴠᴀᴛᴇ"}
 │ 🧩 *ᴘʟᴜɢɪɴs*  ➜ ${totalCommands}
@@ -74,7 +74,7 @@ async function sendLegacyButtonsMenu(message) {
         degreesLatitude: 0,
         degreesLongitude: 0,
         name,
-        address: "👑 𓆩֓⤹𝐓ⱶ֟ؖ۬꧊𝛆 -𝆭𝐁𝐎𝐒𝐒꧕༊!⤸֓𓆪🧿💗",
+        address: config.ownerName,
         jpegThumbnail: thumbnail,
       },
       contentText: menuText,
@@ -208,14 +208,15 @@ Module({
       return await sendText(t + footer);
     }
 
-    // The home menu uses the requested image card with stacked legacy buttons.
-    // Category browsing keeps the existing interactive card/pagination behaviour.
+    // Randomly alternate between the new location-buttons menu and the previous
+    // interactive button menu. Category browsing always keeps pagination.
     if (!arg) {
-      return await sendLegacyButtonsMenu(message);
+      if (Math.random() < 0.5) return await sendLegacyButtonsMenu(message);
     }
 
     // ── Menu cards: home actions or paginated category/command buttons ──
     const P = proto.Message.InteractiveMessage;
+    const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
     let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
     const quickButton = (label, command) => ({
       name: "quick_reply",
@@ -226,7 +227,18 @@ Module({
       quickButton("━[ 𝐀ᴜᴅɪᴏ ]━", "audio"),
     ];
     let buttons;
-    if (firstArg === "browse") {
+    if (!arg) {
+      buttons = [
+        { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: config.ownerName, url: ownerUrl, merchant_url: ownerUrl }) },
+        ...pinnedButtons,
+        quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
+        quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
+        quickButton("━[ 𝐀ɪ ]━", "gpt"),
+        quickButton("━[ 𝐆ᴀᴍᴇ ]━", "game"),
+        quickButton("━[ 𝐑ᴀɴᴋ ]━", "rank"),
+        quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
+      ];
+    } else if (firstArg === "browse") {
       const pageSize = 2;
       const totalPages = Math.max(1, Math.ceil(categories.length / pageSize));
       const requestedPage = Math.max(1, parseInt(argParts[1], 10) || 1);

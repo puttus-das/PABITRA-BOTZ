@@ -665,7 +665,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const PING_TEXT = BOT_NAME;
+  const telegramPingText = (ping) => `*━[ 𝐏ᴜᴛᴛᴜꜱ - ${ping} 𝐃ᴀs⎯꯭̽💜 ]━*`;
   const canUse = (msg) => isPrivate(msg) || isAllowedGroup(msg);
   const safeName = (t, fallback) => (String(t || fallback).replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || fallback);
 
@@ -823,7 +823,8 @@ export default async function initializeTelegramBot(manager) {
       return true;
     }
     if (cmd === "ping") {
-      await safeReply(chatId, PING_TEXT, { reply_to_message_id: replyId });
+      const ping = Math.max(0, Date.now() - ((Number(msg.date) || Math.floor(Date.now() / 1000)) * 1000));
+      await safeReply(chatId, telegramPingText(ping), { reply_to_message_id: replyId });
       return true;
     }
     if (cmd === "id") {
@@ -859,7 +860,10 @@ export default async function initializeTelegramBot(manager) {
     if (data.startsWith("cmd:")) {
       const what = data.slice(4);
       if (what === "menu") await sendDp(chatId, buildHelpMessage(), { reply_markup: menuKeyboard() });
-      else if (what === "ping") await safeReply(chatId, PING_TEXT);
+      else if (what === "ping") {
+        const ping = Math.max(0, Date.now() - ((Number(message.date) || Math.floor(Date.now() / 1000)) * 1000));
+        await safeReply(chatId, telegramPingText(ping));
+      }
       else if (what === "pair")
         await safeReply(chatId, `🔑 <b>${f("send in the official group")}:</b>\n<code>/pair +919876543210</code>`);
       else if (what === "play" || what === "song")

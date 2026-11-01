@@ -65,10 +65,10 @@ Module({
         message: {
           messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
           interactiveMessage: P.create({
-            body: P.Body.create({ text: `*Owner Contact*\n\n📞 +${number}\nTap a button to contact, copy the number, or generate a pairing code.` }),
-            footer: P.Footer.create({ text: "PABITRA-BOT • Image Card" }),
+            body: P.Body.create({ text: `*${config.ownerName}*\n\n📞 +${number}\nTap a button to contact, copy the number, or generate a pairing code.` }),
+            footer: P.Footer.create({ text: config.ownerName }),
             header: P.Header.create({
-              title: "PABITRA-BOT Owner",
+              title: config.ownerName,
               hasMediaAttachment: !!imageMessage,
               ...(imageMessage ? { imageMessage } : {}),
             }),
@@ -83,11 +83,11 @@ Module({
     if (imagePath) {
       await message.conn.sendMessage(message.from, {
         image: fs.readFileSync(imagePath),
-        caption: `*Owner Contact*\nTap the link to chat with the owner: ${contactUrl}`,
+        caption: `*${config.ownerName}*\nTap the link to chat with the owner: ${contactUrl}`,
       }, { quoted: message.gift });
     } else {
       await message.conn.sendMessage(message.from, {
-        text: `*Owner Contact*\nhttps://wa.me/${number}`,
+        text: `*${config.ownerName}*\nhttps://wa.me/${number}`,
       }, { quoted: message.gift });
     }
   }
