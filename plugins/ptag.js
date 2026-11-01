@@ -7,6 +7,9 @@
 // Limits: people with "Read receipts" switched OFF in their privacy settings never show up.
 import { Module } from "../lib/plugins.js";
 import { fancyText } from "../lib/fancy.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const WATCH_MS = 14 * 60 * 1000; // stop before WhatsApp's 15-minute edit window closes
 const EDIT_DEBOUNCE_MS = 4000; // gather names that arrive together into one edit
@@ -14,6 +17,15 @@ const MIN_EDIT_GAP_MS = 6000; // never edit more often than this
 const MAX_NAMES = 40; // names listed inside the message (the counter shows everyone)
 const MAX_WATCHERS = 10;
 const watchers = new Set();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const menuDir = path.join(__dirname, "bin", "menu");
+function menuImage() {
+  try {
+    const files = fs.readdirSync(menuDir).filter((f) => /\.(jpe?g|png)$/i.test(f));
+    if (files.length) return fs.readFileSync(path.join(menuDir, files[Math.floor(Math.random() * files.length)]));
+  } catch {}
+  return null;
+}
 
 const userPart = (jid) => String(jid || "").split("@")[0].split(":")[0];
 const baseJid = (jid) => {
@@ -69,7 +81,14 @@ Module({
   };
 
   // mentions = everyone → everyone gets the notification
-  const sent = await conn.sendMessage(m.from, { text: render(false), mentions: members, noFont: true });
+  const image = menuImage();
+  const sent = await conn.sendMessage(
+    m.from,
+    image
+      ? { image, caption: render(false), mentions: members }
+      : { text: render(false), mentions: members, noFont: true },
+    { quoted: m.raw }
+  );
   if (!sent?.key?.id) return m.send("-!!•- Could not send the tag ❌");
 
   // remove the command message itself (own message → delete for everyone)
@@ -86,7 +105,11 @@ Module({
     timer = null;
     lastEdit = Date.now();
     try {
-      await conn.sendMessage(m.from, { text: render(closed), mentions: members, edit: sent.key, noFont: true });
+      await conn.sendMessage(m.from, {
+        ...(image ? { caption: render(closed) } : { text: render(closed), noFont: true }),
+        mentions: members,
+        edit: sent.key,
+      });
     } catch (e) {
       console.error("[ptag] edit failed:", e?.message || e);
     }

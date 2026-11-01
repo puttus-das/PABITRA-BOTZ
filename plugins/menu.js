@@ -219,6 +219,8 @@ Module({
         ...pinnedButtons,
         quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
         quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
+        quickButton("━[ 𝐀ɪ ]━", "gpt"),
+        quickButton("━[ 𝐆ᴀᴍᴇ ]━", "game"),
         quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
       ];
     } else if (firstArg === "browse") {

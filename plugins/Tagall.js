@@ -1,6 +1,18 @@
 import { Module } from "../lib/plugins.js";
 import { getTheme } from "../Themes/themes.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 const theme = getTheme();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const menuDir = path.join(__dirname, "bin", "menu");
+function menuImage() {
+  try {
+    const files = fs.readdirSync(menuDir).filter((f) => /\.(jpe?g|png)$/i.test(f));
+    if (files.length) return fs.readFileSync(path.join(menuDir, files[Math.floor(Math.random() * files.length)]));
+  } catch {}
+  return null;
+}
 Module({
   command: "tagall",
   package: "group",
@@ -83,12 +95,10 @@ Module({
     }
     tagText += `╰────────────❍`;
     const mentions = participants.map((p) => p.id);
+    const image = menuImage();
     await conn.sendMessage(
       from,
-      {
-        text: tagText,
-        mentions,
-      },
+      image ? { image, caption: tagText, mentions } : { text: tagText, mentions },
       { quoted: m.raw }
     );
   } catch (err) {

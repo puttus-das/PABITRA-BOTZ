@@ -44,14 +44,9 @@ Module({
     const mentionNumber = mentionJid.split("@")[0].replace(/\D/g, "");
     const mentionName = mentionNumber || String(message.pushName || "there").replace(/[\r\n@]/g, "");
     const mentionText = `🎵 @${mentionName}, your song is ready: *${title}*${duration ? ` (${duration})` : ""}`;
-    const mentionMessage = await message.conn.sendMessage(
-      message.from,
-      {
-        text: mentionText,
-        mentions: mentionJid ? [mentionJid] : [],
-      },
-      { quoted: message.raw }
-    );
+    const mentionMessage = await message.reply(mentionText, {
+      mentions: mentionJid ? [mentionJid] : [],
+    });
 
     await message.conn.sendMessage(
       message.from,
@@ -62,7 +57,7 @@ Module({
         fileName: `${String(title).replace(/[\\/:*?"<>|\r\n]/g, " ").slice(0, 90) || "song"}.mp3`,
         caption: CAPTION,
       },
-      { quoted: mentionMessage?.key || message.gift }
+      { quoted: mentionMessage?.key || message.raw }
     );
     await message.react?.("✅");
   } catch (error) {

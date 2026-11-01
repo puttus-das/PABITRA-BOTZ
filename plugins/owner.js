@@ -30,14 +30,31 @@ Module({
   const contactUrl = `https://wa.me/${number}`;
   const imagePath = getOwnerImage();
   const P = proto.Message.InteractiveMessage;
-  const buttons = [{
-    name: "cta_url",
-    buttonParamsJson: JSON.stringify({
-      display_text: "━[ 𝐂ᴏɴᴛᴀᴄᴛ ]━",
-      url: contactUrl,
-      merchant_url: contactUrl,
-    }),
-  }];
+  const buttons = [
+    {
+      name: "cta_url",
+      buttonParamsJson: JSON.stringify({
+        display_text: "━[ 𝐂ᴏɴᴛᴀᴄᴛ ]━",
+        url: contactUrl,
+        merchant_url: contactUrl,
+      }),
+    },
+    {
+      name: "cta_copy",
+      buttonParamsJson: JSON.stringify({
+        display_text: "━[ 𝐂ᴏᴘʏ 𝐍ᴜᴍʙᴇʀ ]━",
+        id: "owner_number",
+        copy_code: `+${number}`,
+      }),
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({
+        display_text: "━[ 𝐏ᴀɪʀ 𝐂ᴏᴅᴇ ]━",
+        id: `${config.prefix}pair`,
+      }),
+    },
+  ];
 
   try {
     const imageMessage = imagePath
@@ -48,8 +65,8 @@ Module({
         message: {
           messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
           interactiveMessage: P.create({
-            body: P.Body.create({ text: `*Owner Contact*\nTap the button below to chat with the owner.` }),
-            footer: P.Footer.create({ text: "PABITRA-BOT" }),
+            body: P.Body.create({ text: `*Owner Contact*\n\n📞 +${number}\nTap a button to contact, copy the number, or generate a pairing code.` }),
+            footer: P.Footer.create({ text: "PABITRA-BOT • Image Card" }),
             header: P.Header.create({
               title: "PABITRA-BOT Owner",
               hasMediaAttachment: !!imageMessage,
