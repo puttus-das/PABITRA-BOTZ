@@ -24,6 +24,9 @@ const getMenuThumb = () => {
 const MENU_DIR = path.join(__dirname, "bin", "menu");
 const officialMenuImgPath = path.join(MENU_DIR, "pabitra-bot-menu.jpg");
 let _lastMenuImg = "";
+// The no-argument .menu command alternates between the current card and the
+// legacy ButtonsMessage menu, so both menu styles remain available.
+let sendLegacyButtonsNext = false;
 const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
 const pickMenuImg = () => {
   if (fs.existsSync(officialMenuImgPath)) return officialMenuImgPath;
@@ -37,6 +40,46 @@ const pickMenuImg = () => {
   } catch {}
   return menuImgPath;
 };
+const legacyButton = (buttonId, displayText) => ({
+  buttonId: `${config.prefix}${buttonId}`,
+  buttonText: { displayText },
+  type: 1,
+});
+async function sendLegacyButtonsMenu(message) {
+  const chat = message.from;
+  if (!chat) return message.send("Could not determine this chat.");
+  const imagePath = pickMenuImg();
+  const thumbnail = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : getMenuThumb();
+  const payload = {
+    buttonsMessage: {
+      buttons: [
+        legacyButton("ping", "ᴘɪɴɢ ᯤ"),
+        legacyButton("alive", "ᴀʟɪᴠᴇ ✆"),
+        legacyButton("gpt", "ᴀɪ ✨"),
+      ],
+      locationMessage: {
+        degreesLatitude: 0,
+        degreesLongitude: 0,
+        name: "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
+        address: "ᴘɪɴɢ • ᴀʟɪᴠᴇ • ᴀɪ",
+        jpegThumbnail: thumbnail,
+      },
+    },
+  };
+  try {
+    const outgoing = generateWAMessageFromContent(chat, payload, {
+      quoted: message.gift,
+      userJid: message.conn.user?.id,
+    });
+    await message.conn.relayMessage(chat, outgoing.message, {
+      messageId: outgoing.key.id,
+    });
+    rememberCard(outgoing.key.id);
+  } catch (error) {
+    console.error("[menu] ButtonsMessage menu failed:", error?.message || error);
+    await message.send("Use .ping, .alive, or .gpt <question>.");
+  }
+}
 const name = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
@@ -147,6 +190,14 @@ Module({
       let t = `🍌 *${fancy("package not found")}: ${match}*\n\n*${fancy("available packages")}*:\n`;
       categories.forEach((c) => { t += `*┃ ◈ ${fancy(c)}*\n`; });
       return await sendText(t + footer);
+    }
+
+    // Alternate only the home menu. Category browsing keeps the existing
+    // interactive card/pagination behaviour unchanged.
+    if (!arg) {
+      const useLegacyButtons = sendLegacyButtonsNext;
+      sendLegacyButtonsNext = !sendLegacyButtonsNext;
+      if (useLegacyButtons) return await sendLegacyButtonsMenu(message);
     }
 
     // ── Menu cards: home actions or paginated category/command buttons ──
