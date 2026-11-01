@@ -198,6 +198,10 @@ Module({
         buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }),
       },
       {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ 𝐈ɴғᴏ ]━", id: `${prefix}owner` }),
+      },
+      {
         name: "cta_url",
         buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ᴀɪʀ 𝐂ᴏᴅᴇ ]━", url: pairUrl, merchant_url: pairUrl }),
       },
