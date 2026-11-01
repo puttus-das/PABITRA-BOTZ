@@ -221,6 +221,7 @@ Module({
         quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
         quickButton("━[ 𝐀ɪ ]━", "gpt"),
         quickButton("━[ 𝐆ᴀᴍᴇ ]━", "game"),
+        quickButton("━[ 𝐑ᴀɴᴋ ]━", "rank"),
         quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
       ];
     } else if (firstArg === "browse") {
