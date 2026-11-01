@@ -167,6 +167,7 @@ Module({
         quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
         quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
         quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
+        quickButton("━[ 𝐌ᴇɴᴜ 𝟐 ]━", "menu2"),
       ];
     } else if (firstArg === "browse") {
       const pageSize = 2;
