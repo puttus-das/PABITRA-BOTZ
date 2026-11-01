@@ -2,46 +2,79 @@
 
 Developer: 𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ  
 Owner: +919641092392  
-WhatsApp Channel: [PABITRA WhatsApp Channel](https://whatsapp.com/channel/0029Vb8RL4F1HspsNlYYOE3e)  
-Telegram Group: [PABITRA Telegram Group](https://t.me/PABITRA_BOTZ)
+[WhatsApp Channel](https://whatsapp.com/channel/0029Vb8RL4F1HspsNlYYOE3e) · [Telegram Group](https://t.me/PABITRA_BOTZ)
 
-## Live Website
+## Deploy PABITRA-BOT
 
-[Open PABITRA-BOT Website](https://pabitra-botzdas.vercel.app/)
+The backend is a long-running Node.js/Docker service. The same source can run on Heroku, Render, Railway, Koyeb, or an Oracle Cloud VM. Click a badge for the provider's deployment flow or setup guide.
 
-[![Open Live Website](https://img.shields.io/badge/Open-Live%20Website-53e4ff?style=for-the-badge&logo=vercel&logoColor=white)](https://pabitra-botzdas.vercel.app/)
+[![Deploy to Heroku](https://img.shields.io/badge/Deploy-Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white)](https://heroku.com/deploy?template=https://github.com/puttus-das/PABITRA-BOTZ)
+[![Deploy to Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com/deploy?repo=https://github.com/puttus-das/PABITRA-BOTZ)
+[![Deploy to Railway](https://img.shields.io/badge/Deploy-Railway-7B2CF5?style=for-the-badge&logo=railway&logoColor=white)](https://railway.com/new?template=https://github.com/puttus-das/PABITRA-BOTZ)
+[![Deploy to Koyeb](https://img.shields.io/badge/Deploy-Koyeb-121212?style=for-the-badge&logo=koyeb&logoColor=white)](https://app.koyeb.com/)
+[![Deploy to Oracle Cloud](https://img.shields.io/badge/Deploy-Oracle%20Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white)](https://www.oracle.com/cloud/free/)
+[![Deploy with Docker](https://img.shields.io/badge/Run-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/get-started/)
 
-[![Deploy Website to Vercel](https://img.shields.io/badge/Deploy-Website%20to%20Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ&root-directory=website&project-name=pabitra-botz-website)
+### Recommended setup
 
-## One-click deployment
+1. Choose one backend host and deploy the repository root. Heroku uses `Procfile`; Render uses [`render.yaml`](render.yaml); Railway uses [`railway.json`](railway.json); Koyeb and Oracle Cloud can build the included [`Dockerfile`](Dockerfile).
+2. Configure the environment variables below in the provider dashboard. Do not commit tokens, pairing sessions, or database secrets.
+3. For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. On Oracle Cloud, use a persistent host directory/volume. Render's included blueprint uses a paid persistent disk.
+4. Deploy the frontend separately to Vercel using the website deployment button below. Set `website/config.js` to the deployed backend URL and set the backend's `WEBSITE_URL` to the Vercel site origin.
 
-### Deploy the bot backend to Heroku
+### Platform notes
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/puttus-das/PABITRA-BOTZ)
+- **Heroku:** supported through `app.json` and `Procfile`. Standard dyno files are ephemeral, so a redeploy/replacement can lose local WhatsApp credentials. Keep a safe copy or use external durable storage; do not assume local files survive.
+- **Render:** [`render.yaml`](render.yaml) provisions a paid web service with a `/data` persistent disk. The free web service sleeps when idle and has no persistent disk, so it is not suitable for a continuously connected bot with local auth files.
+- **Railway:** deploy with the included Dockerfile and `railway.json`, then add a Railway Volume mounted at `/data`. The default free credit may not cover a continuously running service.
+- **Koyeb:** create a Docker web service from this repository and use the included Dockerfile. Configure `AUTH_DIR` and `DATA_DIR` to a durable volume if available on your plan. The free instance scales to zero, so it can disconnect the bot.
+- **Oracle Cloud:** create an Always Free VM where capacity is available, install Docker, clone this repository, then run the container with a host directory mounted at `/data`. Keep the VM patched and protect SSH credentials. Free VM availability and idle-reclamation policies apply.
+- **Vercel:** use it for the static website only. The WhatsApp bot requires a persistent, long-running backend process and should not run as a Vercel serverless function.
 
-This deploys the WhatsApp and Telegram bot backend. The deploy form keeps only three Config Vars: `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL`. Never commit tokens, passwords, or WhatsApp session files to GitHub.
+### Environment variables
 
-### Deploy the website to Vercel
+Set at least `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL` for Telegram integration and website CORS. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ&root-directory=website&project-name=pabitra-botz-website)
+## Deploy the website to Vercel
 
-For Vercel, the `website` folder is already selected as the root directory. After the Heroku app is created, edit [`website/config.js`](website/config.js) and replace `YOUR-HEROKU-APP` with the real Heroku URL. Then set the Heroku Config Var `WEBSITE_URL` to the final Vercel URL.
+[![Open live website](https://img.shields.io/badge/Open-Live%20Website-53e4ff?style=for-the-badge&logo=vercel&logoColor=white)](https://pabitra-botzdas.vercel.app/)
+[![Deploy website to Vercel](https://img.shields.io/badge/Deploy-Website%20to%20Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ&root-directory=website&project-name=pabitra-botz-website)
 
-## Telegram pairing
+Select `website/` as the Vercel root directory. Update `website/config.js` with your live backend URL. The website's pairing form calls the backend's `/pair/:number` endpoint; a Vercel deploy alone does not host the bot backend.
 
-After Heroku is running, add the bot to the configured Telegram group and send:
+## Pair WhatsApp
+
+After the backend is running and the Telegram bot is configured, add it to your group and send:
 
 ```text
 /pair +919641092392
 ```
 
-The bot will send the WhatsApp pairing code in Telegram with a copy button. In WhatsApp, open **Linked Devices → Link a Device → Link with phone number instead**, then enter the code.
+Or open the website and submit a phone number with country code. In WhatsApp, open **Linked Devices → Link a Device → Link with phone number instead**, then enter the returned code. Never share a pairing code.
+
+## Run with Docker
+
+```sh
+docker build -t pabitra-bot .
+mkdir -p runtime/sessions runtime/data
+docker run -d --name pabitra-bot --restart unless-stopped \
+  -p 3000:3000 \
+  -e PORT=3000 \
+  -e AUTH_DIR=/data/sessions \
+  -e DATA_DIR=/data/data \
+  -e BOT_TOKEN_TELEGRAM=your_token \
+  -e TG_GROUP_ID=your_group_id \
+  -e WEBSITE_URL=https://your-site.vercel.app \
+  -v "$PWD/runtime:/data" \
+  pabitra-bot
+```
 
 ## Project layout
 
-- The root project is the Heroku Node.js backend.
-- `website/` is the static Vercel frontend with the bot DP, menu background, MP4 media, live status, and pairing form.
-- `Procfile` starts the Heroku web process.
-- `app.json` contains Heroku deployment metadata and safe Config Var descriptions.
+- The repository root is the WhatsApp/Telegram Node.js backend.
+- `website/` is the static Vercel frontend.
+- `render.yaml` and `railway.json` provide deployment configuration for those platforms.
+- `Dockerfile` is the common container entry point for Docker, Koyeb, Railway, Render, and Oracle Cloud.
+- `Procfile` and `app.json` provide Heroku deployment metadata.
 
 © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ

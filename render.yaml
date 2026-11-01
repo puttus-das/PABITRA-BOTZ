@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: pabitra-bot
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    disk:
+      name: pabitra-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: AUTH_DIR
+        value: /data/sessions
+      - key: DATA_DIR
+        value: /data/data
+      - key: BOT_TOKEN_TELEGRAM
+        sync: false
+      - key: TG_GROUP_ID
+        sync: false
+      - key: WEBSITE_URL
+        sync: false

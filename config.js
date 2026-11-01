@@ -22,10 +22,10 @@ const isTrue = (x) => x === "true" || x === true;
 // Database URL
 const DB_URL = process.env.DATABASE_URL || "";
 
-// Auth directory - use writable location for hosting environments
-// Default to /tmp/auth (writable in most environments) or configurable via AUTH_DIR env var
+// Keep auth and application data under configurable, writable paths for host volumes.
 const AUTH_DIR =
-  process.env.AUTH_DIR || path.join(process.cwd(), "tmp", "auth");
+  process.env.SESSION_DIR || process.env.AUTH_DIR || path.join(process.cwd(), "sessions");
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 
 // Export config
 export default {
@@ -37,6 +37,7 @@ export default {
   SESSION_ID: process.env.SESSION_ID || "",
   THEME: process.env.THEME || "t",
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 100 * 1024 * 1024, // 100MB default
+  DATA_DIR,
   timezone: process.env.TIMEZONE || "UTC",
   GIST_URL: process.env.GIST_URL || "",
   MONGODB_URI: process.env.MONGODB_URI || "",
