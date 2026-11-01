@@ -8,10 +8,13 @@ import FormData from "form-data";
 import { WELCOME_TEXTS, GOODBYE_TEXTS } from "./plugins/bin/text.js";
 import { getRandomWelcome } from "./lib/welcomeVideos.js";
 import { markPairing } from "./lib/pairState.js";
-import { fancy, CAPTION, getInfo, remember, audioFor, videoFor, findSong, fetchBuffer } from "./lib/media.js";
+import { CAPTION, getInfo, remember, audioFor, videoFor, findSong, fetchBuffer } from "./lib/media.js";
+import { fancyText } from "./lib/fancy.js";
+import config from "./config.js";
 
 const __dirname_tg = path.dirname(fileURLToPath(import.meta.url));
 const TG_DP_PATH = path.join(__dirname_tg, "plugins", "bin", "tg_dp.jpg");
+const BOT_NAME = config.botName;
 // welcome videos live in plugins/bin/welcome (random one per new member, thumbnails ≤320px)
 
 export default async function initializeTelegramBot(manager) {
@@ -59,14 +62,14 @@ export default async function initializeTelegramBot(manager) {
 
   tbot
     .setMyCommands([
-      { command: "start", description: "Welcome" },
-      { command: "menu", description: "Show all commands" },
-      { command: "pair", description: "Get a WhatsApp pairing code" },
-      { command: "ping", description: "Check the bot" },
-      { command: "play", description: "Send a song (direct audio)" },
-      { command: "song", description: "Send a song (direct audio)" },
-      { command: "music", description: "Direct song (name or Spotify link)" },
-      { command: "id", description: "Your Telegram ID" },
+      { command: "start", description: fancyText("Welcome") },
+      { command: "menu", description: fancyText("Show all commands") },
+      { command: "pair", description: fancyText("Get a WhatsApp pairing code") },
+      { command: "ping", description: fancyText("Check the bot") },
+      { command: "play", description: fancyText("Send a song (direct audio)") },
+      { command: "song", description: fancyText("Send a song (direct audio)") },
+      { command: "music", description: fancyText("Direct song (name or Spotify link)") },
+      { command: "id", description: fancyText("Your Telegram ID") },
     ])
     .catch(() => {});
 
@@ -130,7 +133,10 @@ export default async function initializeTelegramBot(manager) {
     }).catch(() => {});
   }
 
-  const f = fancy; // 𝐅ᴏɴᴛ for every label
+  // Font visible Telegram text without corrupting HTML tags, URLs, or code.
+  const f = (text) => String(text).split(/(<[^>]*>)/g).map((part) =>
+    part.startsWith("<") && part.endsWith(">") ? part : fancyText(part)
+  ).join("");
 
   // edits a photo's caption (falls back to editing plain text)
   function safeEditCaption(chatId, msgId, text, opts = {}) {
@@ -332,7 +338,7 @@ export default async function initializeTelegramBot(manager) {
       : `🌍 <i>${f("country unknown")}</i>`;
 
     const text = [
-      `[ ♡ <b>${f("pabitra-bot")}</b> ]`,
+      `[ ♡ <b>${BOT_NAME}</b> ]`,
       ``,
       `• 📱 <b>${f("number")}:</b> <code>${esc(rawArg)}</code>`,
       `• 🌐 <b>${f("country")}:</b> ${country}`,
@@ -360,7 +366,7 @@ export default async function initializeTelegramBot(manager) {
 
   function buildHelpMessage() {
     return [
-      `📋 <b>${f("pabitra-bot menu")}</b>`,
+      `📋 <b>${BOT_NAME} ${f("menu")}</b>`,
       `──────────────────────`,
       `🚀 /start — ${f("open the welcome")}`,
       `🔑 <code>/pair +919641092392</code> — ${f("get a pairing code")}`,
@@ -614,7 +620,7 @@ export default async function initializeTelegramBot(manager) {
         );
         await tbot.leaveChat(msg.chat.id).catch(() => {});
       } else {
-        await safeReply(msg.chat.id, `🎉 <b>PABITRA-BOT is ready!</b>\n\nUse /help to see available commands.`);
+        await safeReply(msg.chat.id, `🎉 <b>${BOT_NAME} is ready!</b>\n\n${f("Use /help to see available commands.")}`);
       }
     } catch (e) {
       console.error("[bot.js] new_chat_members error:", e);
@@ -659,7 +665,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const PING_TEXT = "━𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜━";
+  const PING_TEXT = BOT_NAME;
   const canUse = (msg) => isPrivate(msg) || isAllowedGroup(msg);
   const safeName = (t, fallback) => (String(t || fallback).replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || fallback);
 
@@ -699,7 +705,7 @@ export default async function initializeTelegramBot(manager) {
 
   const welcomeCaption = () =>
     [
-      `✨ <b>${f("welcome to pabitra-bot")}</b>`,
+      `✨ <b>${f("welcome to")} ${BOT_NAME}</b>`,
       ``,
       `⚡ <b>${f("fast & secure whatsapp pairing + music bot")}</b>`,
       ``,
@@ -915,7 +921,7 @@ export default async function initializeTelegramBot(manager) {
       return safeReply(
         chatId,
         [
-          `✨ <b>PABITRA-BOT</b>`,
+      `✨ <b>${BOT_NAME}</b>`,
           ``,
           `⚡ <b>Fast & secure WhatsApp pairing system.</b>`,
           ``,
@@ -1241,7 +1247,7 @@ export default async function initializeTelegramBot(manager) {
       return safeReply(
         chatId,
         [
-          `📊 <b>PABITRA-BOT STATUS</b>`,
+          `📊 <b>${BOT_NAME} ${f("status")}</b>`,
           `⏰ Uptime: <code>${Math.floor(upSec / 3600)}h ${Math.floor((upSec % 3600) / 60)}m</code>`,
           `💾 Memory: <code>${memMb} MB</code>`,
           `🔌 Sessions: 🟢 <b>${online}</b> / <b>${conns.length}</b>`,

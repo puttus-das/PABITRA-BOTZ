@@ -20,22 +20,25 @@ const getMenuThumb = () => {
   try { _menuThumb = fs.readFileSync(f); } catch { _menuThumb = null; }
   return _menuThumb;
 };
-// Prefer the current official PABITRA menu DP; retain the old pool as fallback.
+// Keep the existing menu DP files and choose a different old image on each
+// home-menu request. The newer optional DP is intentionally not used here.
 const MENU_DIR = path.join(__dirname, "bin", "menu");
-const officialMenuImgPath = path.join(MENU_DIR, "pabitra-bot-menu.jpg");
 let _lastMenuImg = "";
-// The no-argument .menu command alternates between the current card and the
-// legacy ButtonsMessage menu, so both menu styles remain available.
-let sendLegacyButtonsNext = false;
 const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
 const pickMenuImg = () => {
-  if (fs.existsSync(officialMenuImgPath)) return officialMenuImgPath;
   try {
-    const all = fs.readdirSync(MENU_DIR).filter((x) => /\.(jpe?g|png)$/i.test(x));
+    const menuDirImages = fs.readdirSync(MENU_DIR)
+      .filter((x) => /\.(jpe?g|png)$/i.test(x))
+      .filter((x) => x !== "menu-pabitra-new.jpg")
+      .map((x) => path.join(MENU_DIR, x));
+    const oldImages = ["menu.jpg", "menu_pabitra_old.jpg", "menu2-thumb.jpg", "menu_thumb.jpg"]
+      .map((x) => path.join(__dirname, "bin", x))
+      .filter((x) => fs.existsSync(x));
+    const all = [...new Set([...menuDirImages, ...oldImages])];
     const pool = all.length > 1 ? all.filter((x) => x !== _lastMenuImg) : all;
     if (pool.length) {
       _lastMenuImg = pool[Math.floor(Math.random() * pool.length)];
-      return path.join(MENU_DIR, _lastMenuImg);
+      return _lastMenuImg;
     }
   } catch {}
   return menuImgPath;
@@ -50,20 +53,33 @@ async function sendLegacyButtonsMenu(message) {
   if (!chat) return message.send("Could not determine this chat.");
   const imagePath = pickMenuImg();
   const thumbnail = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : getMenuThumb();
+  const isPublic = db.get(message.botnum, "mode", true) === true;
+  const totalCommands = getCommands().filter((cmd) => cmd?.command && cmd.command !== "undefined").length;
+  const menuText =
+`┌────〔 ✨ *${name}* ✨ 〕────┐
+│ 👋 ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ
+│ 👑 *ᴏᴡɴᴇʀ*    ➜ 𓆩֓⤹𝐓ⱶ֟ؖ۬꧊𝛆 -𝆭𝐁𝐎𝐒𝐒꧕༊!⤸֓𓆪🧿💗
+│ ⚙️ *ᴘʀᴇғɪx*   ➜ ${config.prefix}
+│ 🔒 *ᴍᴏᴅᴇ*     ➜ ${isPublic ? "ᴘᴜʙʟɪᴄ" : "ᴘʀɪᴠᴀᴛᴇ"}
+│ 🧩 *ᴘʟᴜɢɪɴs*  ➜ ${totalCommands}
+│ 🏷️ *ᴠᴇʀsɪᴏɴ*  ➜ 3.0.0
+└────────────────────────┘`;
   const payload = {
     buttonsMessage: {
       buttons: [
         legacyButton("ping", "ᴘɪɴɢ ᯤ"),
         legacyButton("alive", "ᴀʟɪᴠᴇ ✆"),
-        legacyButton("gpt", "ᴀɪ ✨"),
       ],
       locationMessage: {
         degreesLatitude: 0,
         degreesLongitude: 0,
-        name: "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
-        address: "ᴘɪɴɢ • ᴀʟɪᴠᴇ • ᴀɪ",
+        name,
+        address: "👑 𓆩֓⤹𝐓ⱶ֟ؖ۬꧊𝛆 -𝆭𝐁𝐎𝐒𝐒꧕༊!⤸֓𓆪🧿💗",
         jpegThumbnail: thumbnail,
       },
+      contentText: menuText,
+      footerText: `𝐏𝐨ᴡᴇʀᴇᴅ 𝐁ʏ ${name}`,
+      headerType: 6,
     },
   };
   try {
@@ -77,10 +93,10 @@ async function sendLegacyButtonsMenu(message) {
     rememberCard(outgoing.key.id);
   } catch (error) {
     console.error("[menu] ButtonsMessage menu failed:", error?.message || error);
-    await message.send("Use .ping, .alive, or .gpt <question>.");
+    await message.send("Use .ping, .alive, or .owner.");
   }
 }
-const name = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+const name = config.botName;
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
 // "copilot" → "𝐂ᴏᴘɪʟᴏᴛ"  (digits, emoji and symbols stay as they are)
@@ -176,7 +192,7 @@ Module({
       `*┃  ✦ ᴜᴘᴛɪᴍᴇ    ➤ ${MB(runtime(process.uptime()))}*\n` +
       `*┃  ✦ ᴄᴏᴍᴍᴀɴᴅs ➤ ${MB(totalCmds)}*\n` +
       `*┃  ✦ ʀᴀᴍ       ➤ ${MB(ram)}*`;
-    const footer = `\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ\n*~_Made with love by ♡ 𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ ♡_~*`;
+    const footer = `\n\n> © ${name}\n*~_Made with love by ${name}_~*`;
 
     const sendText = (text) =>
       message.conn.sendMessage(message.from, { text: text.trim() }, { quoted: message.gift });
@@ -192,17 +208,14 @@ Module({
       return await sendText(t + footer);
     }
 
-    // Alternate only the home menu. Category browsing keeps the existing
-    // interactive card/pagination behaviour unchanged.
+    // The home menu uses the requested image card with stacked legacy buttons.
+    // Category browsing keeps the existing interactive card/pagination behaviour.
     if (!arg) {
-      const useLegacyButtons = sendLegacyButtonsNext;
-      sendLegacyButtonsNext = !sendLegacyButtonsNext;
-      if (useLegacyButtons) return await sendLegacyButtonsMenu(message);
+      return await sendLegacyButtonsMenu(message);
     }
 
     // ── Menu cards: home actions or paginated category/command buttons ──
     const P = proto.Message.InteractiveMessage;
-    const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
     let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
     const quickButton = (label, command) => ({
       name: "quick_reply",
@@ -213,18 +226,7 @@ Module({
       quickButton("━[ 𝐀ᴜᴅɪᴏ ]━", "audio"),
     ];
     let buttons;
-    if (!arg) {
-      buttons = [
-        { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }) },
-        ...pinnedButtons,
-        quickButton("━[ 𝐕ɪᴅᴇᴏ ]━", "musicvideo"),
-        quickButton("━[ 𝐌ᴜsɪᴄ ]━", "music"),
-        quickButton("━[ 𝐀ɪ ]━", "gpt"),
-        quickButton("━[ 𝐆ᴀᴍᴇ ]━", "game"),
-        quickButton("━[ 𝐑ᴀɴᴋ ]━", "rank"),
-        quickButton("━[ 𝐀ʟʟ 𝐂ᴍᴅs ]━", "menu browse 1"),
-      ];
-    } else if (firstArg === "browse") {
+    if (firstArg === "browse") {
       const pageSize = 2;
       const totalPages = Math.max(1, Math.ceil(categories.length / pageSize));
       const requestedPage = Math.max(1, parseInt(argParts[1], 10) || 1);
@@ -453,7 +455,7 @@ Module({
 `;
     await message.conn.sendMessage(message.from, {
       image: fs.readFileSync(pickMenuImg()),
-      caption: ctx + `\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ`,
+      caption: ctx + `\n> © ${name}`,
     });
   } catch (err) {
     console.error("❌ Alive command error:", err);

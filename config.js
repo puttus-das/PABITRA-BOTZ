@@ -18,6 +18,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
 // Helper to parse boolean values
 const isTrue = (x) => x === "true" || x === true;
+const BOT_NAME = process.env.BOT_NAME || "━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━";
 
 // Database URL
 const DB_URL = process.env.DATABASE_URL || "";
@@ -30,11 +31,12 @@ const reconnectLimit = Number.parseInt(process.env.RECONNECT_LIMIT, 10);
 
 // Export config
 export default {
+  botName: BOT_NAME,
   prefix: process.env.BOT_PREFIX || ".",
   owner: process.env.OWNER_NUMBER || "919641092392",
   sudo: process.env.SUDO || "919641092392",
-  packname: process.env.PACKNAME || "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ",
-  author: process.env.AUTHOR || "𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ",
+  packname: process.env.PACKNAME || BOT_NAME,
+  author: process.env.AUTHOR || BOT_NAME,
   SESSION_ID: process.env.SESSION_ID || "",
   THEME: process.env.THEME || "t",
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 100 * 1024 * 1024, // 100MB default
