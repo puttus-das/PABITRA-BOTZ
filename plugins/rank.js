@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
 import { Module } from "../lib/plugins.js";
 import { db } from "../lib/client.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -53,26 +53,24 @@ Module({ on: "message", package: "rank" })(async (message) => {
 async function sendRankCard(message, rows, title) {
   const imagePath = menuImage();
   try {
-    const P = proto.Message.InteractiveMessage;
-    const imageMessage = imagePath
-      ? (await prepareWAMessageMedia({ image: fs.readFileSync(imagePath) }, { upload: message.conn.waUploadToServer })).imageMessage
-      : null;
     const text = `${title}\n\n${rows.length ? rows.map((row, i) => `${i + 1}. @${row.jid.split("@")[0]} — *${row.count} msgs*`).join("\n") : "No activity recorded yet."}`;
-    const msg = generateWAMessageFromContent(message.from, {
-      viewOnceMessage: { message: {
-        messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-        interactiveMessage: P.create({
-          body: P.Body.create({ text }),
-          footer: P.Footer.create({ text: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" }),
-          header: P.Header.create({ hasMediaAttachment: !!imageMessage, ...(imageMessage ? { imageMessage } : {}) }),
-          nativeFlowMessage: P.NativeFlowMessage.create({ buttons: [
-            { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🔄 REFRESH", id: ".rank" }) },
-            { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👤 MY RANK", id: ".rank me" }) },
-          ] }),
-        }),
-      } },
-    }, { quoted: message.raw || message.gift, userJid: message.conn.user?.id });
-    await message.conn.relayMessage(message.from, msg.message, { messageId: msg.key.id });
+    const options = { quoted: message.raw || message.gift };
+    if (imagePath) {
+      await message.conn.sendMessage(message.from, { image: fs.readFileSync(imagePath), caption: text }, options);
+    } else {
+      await message.conn.sendMessage(message.from, { text }, options);
+    }
+    await sendSingleButtonCards({
+      conn: message.conn,
+      jid: message.from,
+      buttons: [
+        { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "🔄 REFRESH", id: ".rank" }) },
+        { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👤 MY RANK", id: ".rank me" }) },
+      ],
+      body: "🏆 Leaderboard actions",
+      footer: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
+      quoted: message.raw || message.gift,
+    });
   } catch (error) {
     console.error("[rank] card failed:", error?.message || error);
     await message.reply(`${title}\n\n${rows.map((row, i) => `${i + 1}. @${row.jid.split("@")[0]} — ${row.count} msgs`).join("\n") || "No activity recorded yet."}`, { mentions: rows.map((r) => r.jid) });

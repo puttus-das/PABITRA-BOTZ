@@ -1,4 +1,5 @@
 import { Module } from "../lib/plugins.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 Module({
   command: "btpn",
@@ -21,26 +22,18 @@ Module({
 
   await message.conn.sendMessage(
     message.from,
-    {
-      text: `*${emoji} } Ꭾ❤️‍🩹ŇᎶ: ${latency} ๓Ş*`,
-      footer: "𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ",
-      buttons: [
-        {
-          buttonId: ".alive",
-          buttonText: { displayText: "✅ Alive" },
-          type: 1,
-        },
-        {
-          buttonId: ".owner",
-          buttonText: { displayText: "👑 Owner" },
-          type: 1,
-        },
-      ],
-      headerType: 1,
-      contextInfo: {
-        mentionedJid: [message.sender],
-      },
-    },
+    { text: `*${emoji} } Ꭾ❤️‍🩹ŇᎶ: ${latency} ๓Ş*`, contextInfo: { mentionedJid: [message.sender] } },
     { quoted: message.gift }
   );
+  await sendSingleButtonCards({
+    conn: message.conn,
+    jid: message.from,
+    buttons: [
+      { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "✅ Alive", id: ".alive" }) },
+      { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👑 Owner", id: ".owner" }) },
+    ],
+    body: "Ping actions",
+    footer: "𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ",
+    quoted: message.gift,
+  });
 });

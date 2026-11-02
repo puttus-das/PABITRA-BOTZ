@@ -7,19 +7,12 @@ import { Module, getCommands } from "../lib/plugins.js";
 import config from "../config.js";
 import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
 import { sendPing } from "../lib/pingCore.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const menuImgPath = path.join(__dirname, "bin", "menu.jpg");
-const menuThumbPath = path.join(__dirname, "bin", "menu_thumb.jpg");
-let _menuThumb = null;
-const getMenuThumb = () => {
-  if (_menuThumb) return _menuThumb;
-  const f = fs.existsSync(menuThumbPath) ? menuThumbPath : menuImgPath;
-  try { _menuThumb = fs.readFileSync(f); } catch { _menuThumb = null; }
-  return _menuThumb;
-};
 // Keep the existing menu DP files and choose a different old image on each
 // home-menu request. The newer optional DP is intentionally not used here.
 const MENU_DIR = path.join(__dirname, "bin", "menu");
@@ -43,64 +36,6 @@ const pickMenuImg = () => {
   } catch {}
   return menuImgPath;
 };
-const legacyButton = (buttonId, displayText) => ({
-  buttonId: `${config.prefix}${buttonId}`,
-  buttonText: { displayText },
-  type: 1,
-});
-async function sendLegacyButtonsMenu(message) {
-  const chat = message.from;
-  if (!chat) return message.send("Could not determine this chat.");
-  const imagePath = pickMenuImg();
-  const thumbnail = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : getMenuThumb();
-  const isPublic = db.get(message.botnum, "mode", true) === true;
-  const totalCommands = getCommands().filter((cmd) => cmd?.command && cmd.command !== "undefined").length;
-  const ownerDigits = String(config.owner || "").replace(/\D/g, "");
-  const ownerPhone = ownerDigits.startsWith("91") && ownerDigits.length === 12
-    ? `+91 ${ownerDigits.slice(2, 7)} ${ownerDigits.slice(7)}`
-    : `+${ownerDigits}`;
-  const menuText =
-`┌────〔 ✨ *${name}* ✨ 〕────┐
-│ 👋 ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ
-│ 👑 *ᴏᴡɴᴇʀ*    ➜ ${config.ownerName}
-│ 📞 *ɴᴜᴍʙᴇʀ*  ➜ ${ownerPhone}
-│ ⚙️ *ᴘʀᴇғɪx*   ➜ ${config.prefix}
-│ 🔒 *ᴍᴏᴅᴇ*     ➜ ${isPublic ? "ᴘᴜʙʟɪᴄ" : "ᴘʀɪᴠᴀᴛᴇ"}
-│ 🧩 *ᴘʟᴜɢɪɴs*  ➜ ${totalCommands}
-│ 📋 *ᴄᴏᴍᴍᴀɴᴅs* ➜ ${config.prefix}menu browse
-└────────────────────────┘`;
-  const payload = {
-    buttonsMessage: {
-      buttons: [
-        legacyButton("ping", "ᴘɪɴɢ ᯤ"),
-        legacyButton("alive", "ᴀʟɪᴠᴇ ✆"),
-      ],
-      locationMessage: {
-        degreesLatitude: 0,
-        degreesLongitude: 0,
-        name,
-        address: config.ownerName,
-        jpegThumbnail: thumbnail,
-      },
-      contentText: menuText,
-      footerText: `𝐏𝐨ᴡᴇʀᴇᴅ 𝐁ʏ ${name}`,
-      headerType: 6,
-    },
-  };
-  try {
-    const outgoing = generateWAMessageFromContent(chat, payload, {
-      quoted: message.gift,
-      userJid: message.conn.user?.id,
-    });
-    await message.conn.relayMessage(chat, outgoing.message, {
-      messageId: outgoing.key.id,
-    });
-    rememberCard(outgoing.key.id);
-  } catch (error) {
-    console.error("[menu] ButtonsMessage menu failed:", error?.message || error);
-    await message.send(`Use ${config.prefix}ping, ${config.prefix}alive, or ${config.prefix}owner.`);
-  }
-}
 const name = config.botName;
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
@@ -120,7 +55,6 @@ const withTimeout = (promise, ms, label) =>
     promise,
     new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} upload timed out (${ms / 1000}s)`)), ms)),
   ]);
-const readMore = String.fromCharCode(8206).repeat(4001);
 
 // 𝐁𝐨𝐥𝐝 math letters + digits  (A-Z a-z 0-9)
 const MB = (t) =>
@@ -215,7 +149,7 @@ Module({
 
     // ── Screenshot-style product menu or paginated category buttons ──
     const P = proto.Message.InteractiveMessage;
-    let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
+    let bodyText = `${headerBox}\n\n${buildFullList().trim()}${footer}`;
     const quickButton = (label, command) => ({
       name: "quick_reply",
       buttonParamsJson: JSON.stringify({ display_text: label, id: `${prefix}${command}` }),
@@ -264,129 +198,28 @@ Module({
       buttons.push(...pinnedButtons);
     }
 
-    const bizNodes = [
-      {
-        tag: "biz",
-        attrs: {},
-        content: [
-          {
-            tag: "interactive",
-            attrs: { type: "native_flow", v: "1" },
-            content: [{ tag: "native_flow", attrs: { v: "9", name: "mixed" } }],
-          },
-        ],
-      },
-    ];
-    if (!message.from.endsWith("@g.us")) bizNodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
-
-    // random dp — uploaded once per image and reused, so the menu comes fast
+    // Send a normal picture (not a catalog/product header) so WhatsApp does
+    // not expand the menu image into a tall product-style card.
     const imgPath = pickMenuImg();
-    let imageMessage = null;
-    const cached = menuMediaCache.get(imgPath);
-    if (cached && Date.now() - cached.t < 6 * 3600 * 1000) {
-      imageMessage = cached.m;
-    } else {
-      try {
-        const media = await withTimeout(
-          prepareWAMessageMedia({ image: fs.readFileSync(imgPath) }, { upload: message.conn.waUploadToServer }),
-          60_000,
-          "image"
-        );
-        imageMessage = media.imageMessage;
-        menuMediaCache.set(imgPath, { m: imageMessage, t: Date.now() });
-      } catch (e) {
-        console.error("❌ Menu image upload failed, using thumbnail card:", e?.message || e);
-      }
-    }
-
-    // product-card header: dp + name + $99999 + "🛒 100 items"; the product link is the Telegram group
-    const productHeader = () =>
-      P.Header.create({
-        title: name,
-        hasMediaAttachment: true,
-        productMessage: proto.Message.ProductMessage.create({
-          product: proto.Message.ProductMessage.ProductSnapshot.create({
-            productImage: imageMessage,
-            productId: "99999",
-            title: name,
-            description: name,
-            currencyCode: "USD",
-            priceAmount1000: 99999000,
-            retailerId: "PABITRA-BOT",
-            url: pairUrl,
-            productImageCount: 100,
-          }),
-          businessOwnerJid: message.botJid || "0@s.whatsapp.net",
-        }),
-      });
-    const plainHeader = () =>
-      P.Header.create({
-        hasMediaAttachment: !!imageMessage,
-        ...(imageMessage ? { imageMessage } : {}),
-      });
-
-    // no newsletter / forwarded label on the menu
-    const relayCard = async (header, useThumbCard) => {
-      const msg = generateWAMessageFromContent(
+    try {
+      await message.conn.sendMessage(
         message.from,
-        {
-          viewOnceMessage: {
-            message: {
-              messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-              interactiveMessage: P.create({
-                body: P.Body.create({ text: bodyText }),
-                footer: P.Footer.create({ text: config.brandLine }),
-                header,
-                contextInfo: useThumbCard
-                  ? {
-                      externalAdReply: {
-                        title: `${name} • Online`,
-                        body: `Type ${prefix}menu <package> for more`,
-                        thumbnail: getMenuThumb(),
-                        mediaType: 1,
-                        renderLargerThumbnail: true,
-                        showAdAttribution: false,
-                        sourceUrl: pairUrl,
-                      },
-                    }
-                  : {},
-                nativeFlowMessage: P.NativeFlowMessage.create({ buttons }),
-              }),
-            },
-          },
-        },
-        { quoted: message.gift, userJid: message.conn.user?.id }
+        { image: fs.readFileSync(imgPath), caption: `${name}\n${config.brandLine}` },
+        { quoted: message.gift }
       );
-      await message.conn.relayMessage(message.from, msg.message, {
-        messageId: msg.key.id,
-        additionalNodes: bizNodes,
-      });
-      rememberCard(msg.key.id);
-    };
-
-    let sent = false;
-    if (imageMessage) {
-      try {
-        await relayCard(!arg ? productHeader() : plainHeader(), false);
-        sent = true;
-      } catch (e) {
-        console.error("❌ Primary menu card failed, trying fallback card:", e?.message || e);
-        try {
-          await relayCard(!arg ? plainHeader() : productHeader(), false);
-          sent = true;
-        } catch (e2) {
-          console.error("❌ Product menu failed:", e2?.message || e2);
-        }
-      }
-    } else {
-      try {
-        await relayCard(plainHeader(), true);
-        sent = true;
-      } catch (e) {
-        console.error("❌ Thumbnail menu failed:", e?.message || e);
-      }
+    } catch (e) {
+      console.error("❌ Menu image send failed:", e?.message || e);
     }
-    if (!sent) await sendText(headerBox + "\n\n" + buildFullList() + footer);
+    await sendText(bodyText);
+    const sentIds = await sendSingleButtonCards({
+      conn: message.conn,
+      jid: message.from,
+      buttons,
+      body: `📋 ${name} — option by option`,
+      footer: config.brandLine,
+      quoted: message.gift,
+    });
+    sentIds.forEach(rememberCard);
   } catch (err) {
     console.error("❌ Menu command error:", err);
     await message.conn.sendMessage(message.from, { text: `❌ Error: ${err?.message || err}` });

@@ -725,41 +725,37 @@ export default async function initializeTelegramBot(manager) {
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
   const telegramPingText = () => `━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━`;
+  async function sendTelegramPing(chatId, replyId) {
+    await safeReply(chatId, telegramPingText(), replyId ? { reply_to_message_id: replyId } : {});
+    await safeReply(chatId, `🎧 ${f("Tap the single button below for audio options.")}`, {
+      reply_markup: {
+        inline_keyboard: [[{ text: `🎧 ${f("Audio")}`, callback_data: "cmd:audio" }]],
+      },
+    });
+  }
   const canUse = (msg) => isPrivate(msg) || isAllowedGroup(msg);
   const safeName = (t, fallback) => (String(t || fallback).replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || fallback);
 
   const mainKeyboard = () => ({
     inline_keyboard: [
-      [
-        { text: `📋 ${f("menu")}`, callback_data: "cmd:menu" },
-        { text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" },
-      ],
-      [
-        { text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" },
-        { text: `🎵 ${f("music")}`, callback_data: "cmd:music" },
-      ],
-      [
-        { text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK },
-        { text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK },
-      ],
+      [{ text: `📋 ${f("menu")}`, callback_data: "cmd:menu" }],
+      [{ text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }],
+      [{ text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }],
+      [{ text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
+      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }],
+      [{ text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
     ],
   });
   const menuKeyboard = () => ({
     inline_keyboard: [
-      [
-        { text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" },
-        { text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" },
-      ],
+      [{ text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }],
+      [{ text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }],
       [{ text: `👥 ${f("tagall")}`, callback_data: "cmd:tagall" }],
-      [
-        { text: `▶️ ${f("play")}`, callback_data: "cmd:play" },
-        { text: `🎶 ${f("song")}`, callback_data: "cmd:song" },
-        { text: `🎵 ${f("music")}`, callback_data: "cmd:music" },
-      ],
-      [
-        { text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK },
-        { text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK },
-      ],
+      [{ text: `▶️ ${f("play")}`, callback_data: "cmd:play" }],
+      [{ text: `🎶 ${f("song")}`, callback_data: "cmd:song" }],
+      [{ text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
+      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }],
+      [{ text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
     ],
   });
 
@@ -804,10 +800,8 @@ export default async function initializeTelegramBot(manager) {
 
       const reply_markup = {
         inline_keyboard: [
-          [
-            { text: `🎧 ${f("audio")}`, callback_data: `ytA:${id}` },
-            { text: `🎬 ${f("video")}`, callback_data: `ytV:${id}` },
-          ],
+          [{ text: `🎧 ${f("audio")}`, callback_data: `ytA:${id}` }],
+          [{ text: `🎬 ${f("video")}`, callback_data: `ytV:${id}` }],
         ],
       };
 
@@ -884,7 +878,7 @@ export default async function initializeTelegramBot(manager) {
       return true;
     }
     if (cmd === "ping") {
-      await safeReply(chatId, telegramPingText(), { reply_to_message_id: replyId });
+      await sendTelegramPing(chatId, replyId);
       return true;
     }
     if (cmd === "id") {
@@ -922,8 +916,10 @@ export default async function initializeTelegramBot(manager) {
       if (what === "menu") await sendDp(chatId, buildHelpMessage(), { reply_markup: menuKeyboard() }, true);
       else if (what === "tagall") await sendTelegramTagall(fake, chatId, replyId);
       else if (what === "ping") {
-        await safeReply(chatId, telegramPingText());
+        await sendTelegramPing(chatId);
       }
+      else if (what === "audio")
+        await safeReply(chatId, `🎧 <b>${f("Send a song name with this command:")}</b>\n<code>/music ${f("song name")}</code>`);
       else if (what === "pair")
         await safeReply(chatId, `🔑 <b>${f("send in the official group")}:</b>\n<code>/pair +919876543210</code>`);
       else if (what === "play" || what === "song")

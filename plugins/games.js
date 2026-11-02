@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
 import { Module } from "../lib/plugins.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -22,28 +22,29 @@ Module({
 })(async (message) => {
   const imagePath = randomImage();
   try {
-    const P = proto.Message.InteractiveMessage;
-    const imageMessage = imagePath
-      ? (await prepareWAMessageMedia({ image: fs.readFileSync(imagePath) }, { upload: message.conn.waUploadToServer })).imageMessage
-      : null;
-    const msg = generateWAMessageFromContent(message.from, {
-      viewOnceMessage: { message: {
-        messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-        interactiveMessage: P.create({
-          body: P.Body.create({ text: "🎮 *PABITRA GAME ZONE*\nChoose a game below." }),
-          footer: P.Footer.create({ text: "Fast • Fun • Button Games" }),
-          header: P.Header.create({ hasMediaAttachment: !!imageMessage, ...(imageMessage ? { imageMessage } : {}) }),
-          nativeFlowMessage: P.NativeFlowMessage.create({ buttons: [
-            button("dice", "🎲 DICE"),
-            button("coin", "🪙 COIN FLIP"),
-            button("rps rock", "✊ ROCK"),
-            button("rps paper", "✋ PAPER"),
-            button("rps scissors", "✌️ SCISSORS"),
-          ] }),
-        }),
-      } },
-    }, { quoted: message.gift, userJid: message.conn.user?.id });
-    await message.conn.relayMessage(message.from, msg.message, { messageId: msg.key.id });
+    if (imagePath) {
+      await message.conn.sendMessage(
+        message.from,
+        { image: fs.readFileSync(imagePath), caption: "🎮 *PABITRA GAME ZONE*\nChoose a game below." },
+        { quoted: message.gift }
+      );
+    } else {
+      await message.conn.sendMessage(message.from, { text: "🎮 *PABITRA GAME ZONE*\nChoose a game below." }, { quoted: message.gift });
+    }
+    await sendSingleButtonCards({
+      conn: message.conn,
+      jid: message.from,
+      buttons: [
+        button("dice", "🎲 DICE"),
+        button("coin", "🪙 COIN FLIP"),
+        button("rps rock", "✊ ROCK"),
+        button("rps paper", "✋ PAPER"),
+        button("rps scissors", "✌️ SCISSORS"),
+      ],
+      body: "🎮 Choose one game",
+      footer: "Fast • Fun • Button Games",
+      quoted: message.gift,
+    });
   } catch {
     await message.send("🎮 .dice | .coin | .rps rock/paper/scissors");
   }

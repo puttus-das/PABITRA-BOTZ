@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { proto, generateWAMessageFromContent } from "baileys";
 import { Module } from "../lib/plugins.js";
 import config from "../config.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin");
 const prefix = () => config.prefix || ".";
@@ -16,28 +16,18 @@ const BLACK = { "do#": ["Do#", "dos"], "re#": ["Re#", "res"], "fa#": ["Fa#", "fa
 const STRINGS = { e6: ["E (low)", "e6"], a5: ["A", "a5"], d4: ["D", "d4"], g3: ["G", "g3"], b2: ["B", "b2"], e1: ["e (high)", "e1"] };
 
 async function sendButtons(message, text, footer, map, cmd) {
-  const P = proto.Message.InteractiveMessage;
-  const bizNodes = [{
-    tag: "biz", attrs: {},
-    content: [{ tag: "interactive", attrs: { type: "native_flow", v: "1" }, content: [{ tag: "native_flow", attrs: { v: "9", name: "mixed" } }] }],
-  }];
-  if (!message.from.endsWith("@g.us")) bizNodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
   const buttons = Object.entries(map).map(([key, [label]]) => ({
     name: "quick_reply",
     buttonParamsJson: JSON.stringify({ display_text: label, id: `${prefix()}${cmd} ${key}` }),
   }));
-  const msg = generateWAMessageFromContent(message.from, {
-    viewOnceMessage: { message: {
-      messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-      interactiveMessage: P.create({
-        body: P.Body.create({ text }),
-        footer: P.Footer.create({ text: footer }),
-        header: P.Header.create({ hasMediaAttachment: false }),
-        nativeFlowMessage: P.NativeFlowMessage.create({ buttons }),
-      }),
-    } },
-  }, { quoted: message.gift, userJid: message.conn.user?.id });
-  await message.conn.relayMessage(message.from, msg.message, { messageId: msg.key.id, additionalNodes: bizNodes });
+  await sendSingleButtonCards({
+    conn: message.conn,
+    jid: message.from,
+    buttons,
+    body: text,
+    footer,
+    quoted: message.gift,
+  });
 }
 
 async function sendBoard(message, { image, title, cards, cmd }) {

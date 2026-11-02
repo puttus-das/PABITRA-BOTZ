@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
 import config from "../config.js";
 import { Module } from "../lib/plugins.js";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -29,7 +29,6 @@ Module({
 
   const contactUrl = `https://wa.me/${number}`;
   const imagePath = getOwnerImage();
-  const P = proto.Message.InteractiveMessage;
   const buttons = [
     {
       name: "cta_url",
@@ -57,29 +56,22 @@ Module({
   ];
 
   try {
-    const imageMessage = imagePath
-      ? (await prepareWAMessageMedia({ image: fs.readFileSync(imagePath) }, { upload: message.conn.waUploadToServer })).imageMessage
-      : null;
-    const msg = generateWAMessageFromContent(message.from, {
-      viewOnceMessage: {
-        message: {
-          messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-          interactiveMessage: P.create({
-            body: P.Body.create({ text: `*${config.ownerName}*\n\n📞 +${number}\nTap a button to contact, copy the number, or generate a pairing code.` }),
-            footer: P.Footer.create({ text: config.ownerName }),
-            header: P.Header.create({
-              title: config.ownerName,
-              hasMediaAttachment: !!imageMessage,
-              ...(imageMessage ? { imageMessage } : {}),
-            }),
-            nativeFlowMessage: P.NativeFlowMessage.create({ buttons }),
-          }),
-        },
-      },
-    }, { quoted: message.gift, userJid: message.conn.user?.id });
-    await message.conn.relayMessage(message.from, msg.message, { messageId: msg.key.id });
+    const text = `*${config.ownerName}*\n\n📞 +${number}\nTap an action below to contact, copy the number, or generate a pairing code.`;
+    if (imagePath) {
+      await message.conn.sendMessage(message.from, { image: fs.readFileSync(imagePath), caption: text }, { quoted: message.gift });
+    } else {
+      await message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
+    }
+    await sendSingleButtonCards({
+      conn: message.conn,
+      jid: message.from,
+      buttons,
+      body: "👤 Owner contact actions",
+      footer: config.ownerName,
+      quoted: message.gift,
+    });
   } catch (error) {
-    console.error("[owner] Interactive card failed:", error?.message || error);
+    console.error("[owner] Contact card failed:", error?.message || error);
     if (imagePath) {
       await message.conn.sendMessage(message.from, {
         image: fs.readFileSync(imagePath),

@@ -1,15 +1,17 @@
 import { Module } from "../lib/plugins.js";
-import * as giftedBtns from "gifted-btns";
+import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
 
-// gifted-btns versions differ; never crash if sendButtons is missing or fails → plain text fallback
-async function sendButtons(client, jid, data) {
-  const fn = giftedBtns.sendButtons || giftedBtns.default?.sendButtons;
-  try {
-    if (typeof fn === "function") return await fn(client, jid, data);
-  } catch (e) {
-    console.error("[CKID] sendButtons failed, using text:", e?.message || e);
-  }
-  return client.sendMessage(jid, { text: `*${data.title}*\n\n${data.text}\n\n_${data.footer || ""}_` });
+async function sendButtons(message, data) {
+  const text = `*${data.title}*\n\n${data.text}\n\n_${data.footer || ""}_`;
+  await message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
+  await sendSingleButtonCards({
+    conn: message.conn,
+    jid: message.from,
+    buttons: data.buttons,
+    body: data.title,
+    footer: data.footer || "",
+    quoted: message.gift,
+  });
 }
 
 Module({
@@ -46,7 +48,7 @@ Module({
 
       await message.react("✅");
 
-      return await sendButtons(message.client, message.jid, {
+      return await sendButtons(message, {
         title: "📊 Group Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Group ID:*\n\`${id}\``,
         footer: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" ,
@@ -81,7 +83,7 @@ Module({
 
       await message.react("✅");
 
-      return await sendButtons(message.client, message.jid, {
+      return await sendButtons(message, {
         title: "📢 Channel Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Channel ID:*\n\`${id}\``,
         footer: "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
