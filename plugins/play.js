@@ -14,8 +14,8 @@ const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile
 const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const clean = (value) => String(value || "").trim();
 function ownerVCardQuote() {
-  const phone = String(config.owner || "919641092392").replace(/\D/g, "");
-  const displayName = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+  const phone = "919641092392";
+  const displayName = "━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━";
   return {
     key: { fromMe: false, participant: `${phone}@s.whatsapp.net`, remoteJid: "status@broadcast" },
     message: {
@@ -88,17 +88,21 @@ async function getRabbitSong(query, route = "play") {
   return rabbitResult(data);
 }
 
-async function sendRabbitSong(message, query, route = "play") {
+async function sendRabbitSong(message, query, route = "play", { audioOnly = false, mentionJid } = {}) {
   const song = await getRabbitSong(query, route);
+  const audioMessage = {
+    audio: { url: song.audioUrl },
+    mimetype: "audio/mpeg",
+    ptt: false,
+    fileName: `${String(song.title || query).replace(/[\\/:*?"<>|\r\n]/g, " ").slice(0, 90) || "song"}.mp3`,
+    ...(!audioOnly ? {
+      caption: `🎵 *${song.title || query}*${song.duration ? `\n⏱ ${song.duration}` : ""}\n${CAPTION}`,
+    } : {}),
+    ...(audioOnly && mentionJid ? { contextInfo: { mentionedJid: [mentionJid] } } : {}),
+  };
   await message.conn.sendMessage(
     message.from,
-    {
-      audio: { url: song.audioUrl },
-      mimetype: "audio/mpeg",
-      ptt: false,
-      fileName: `${String(song.title || query).replace(/[\\/:*?"<>|\r\n]/g, " ").slice(0, 90) || "song"}.mp3`,
-      caption: `🎵 *${song.title || query}*${song.duration ? `\n⏱ ${song.duration}` : ""}\n${CAPTION}`,
-    },
+    audioMessage,
     { quoted: ownerVCardQuote() }
   );
 }
@@ -208,17 +212,19 @@ async function downloadEliteAudio(videoUrl) {
   }
 }
 
-async function sendSong(message, query) {
+async function sendSong(message, query, { audioOnly = false, mentionJid } = {}) {
   const video = await searchVideo(query);
   const buffer = await downloadEliteAudio(video.url);
+  const audioMessage = {
+    audio: buffer,
+    mimetype: "audio/mpeg",
+    ptt: false,
+    fileName: `${video.title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || "song"}.mp3`,
+    ...(audioOnly && mentionJid ? { contextInfo: { mentionedJid: [mentionJid] } } : {}),
+  };
   await message.conn.sendMessage(
     message.from,
-    {
-      audio: buffer,
-      mimetype: "audio/mpeg",
-      ptt: false,
-      fileName: `${video.title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || "song"}.mp3`,
-    },
+    audioMessage,
     { quoted: ownerVCardQuote() }
   );
 }
@@ -230,20 +236,18 @@ Module({
   description: "Search and download a song through RabbitAPI",
 })(async (message, match) => {
   const query = clean(match);
-  const reply = (text) => message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
-  if (!query) return reply(`*${config.prefix}play <song name or YouTube URL>*`);
+  if (!query) return;
   try {
     await message.react?.("🎵");
     try {
-      await sendRabbitSong(message, query, "play");
+      await sendRabbitSong(message, query, "play", { audioOnly: true, mentionJid: message.sender });
     } catch (rabbitError) {
       console.warn("[RABBIT:PLAY] Falling back to EliteProTech:", rabbitError?.message || rabbitError);
-      await sendSong(message, query);
+      await sendSong(message, query, { audioOnly: true, mentionJid: message.sender });
     }
     await message.react?.("✅");
   } catch (error) {
     console.error("[RABBIT:PLAY]", error?.message || error);
-    await reply(`⚠️ Song download failed: ${error?.message || "try again later"}\n\n${CAPTION}`);
   }
 });
 
