@@ -2,6 +2,7 @@ import axios from "axios";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import config from "../config.js";
@@ -12,6 +13,8 @@ const BASE = (process.env.ELITE_API_BASE || "https://eliteprotech-apis.zone.id")
 const RABBIT_BASE = (process.env.RABBIT_API_BASE || "https://rabbitapi.zone.id").replace(/\/+$/, "");
 const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36";
 const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PLAY_DP_PATH = path.join(__dirname, "bin", "tg_dp.jpg");
 const clean = (value) => String(value || "").trim();
 function ownerVCardQuote() {
   const phone = "919641092392";
@@ -88,7 +91,18 @@ async function getRabbitSong(query, route = "play") {
   return rabbitResult(data);
 }
 
-async function sendRabbitSong(message, query, route = "play", { audioOnly = false, mentionJid } = {}) {
+async function sendPlayDp(message, dpState) {
+  if (!dpState || dpState.sent) return;
+  try {
+    const image = fs.readFileSync(PLAY_DP_PATH);
+    await message.conn.sendMessage(message.from, { image });
+    dpState.sent = true;
+  } catch (error) {
+    console.warn("[PLAY:DP] Could not send bot DP:", error?.message || error);
+  }
+}
+
+async function sendRabbitSong(message, query, route = "play", { audioOnly = false, mentionJid, dpState } = {}) {
   const song = await getRabbitSong(query, route);
   const audioMessage = {
     audio: { url: song.audioUrl },
@@ -105,6 +119,7 @@ async function sendRabbitSong(message, query, route = "play", { audioOnly = fals
     audioMessage,
     { quoted: ownerVCardQuote() }
   );
+  if (audioOnly) await sendPlayDp(message, dpState);
 }
 
 async function sendRabbitVideo(message, videoUrl) {
@@ -212,7 +227,7 @@ async function downloadEliteAudio(videoUrl) {
   }
 }
 
-async function sendSong(message, query, { audioOnly = false, mentionJid } = {}) {
+async function sendSong(message, query, { audioOnly = false, mentionJid, dpState } = {}) {
   const video = await searchVideo(query);
   const buffer = await downloadEliteAudio(video.url);
   const audioMessage = {
@@ -227,6 +242,7 @@ async function sendSong(message, query, { audioOnly = false, mentionJid } = {}) 
     audioMessage,
     { quoted: ownerVCardQuote() }
   );
+  if (audioOnly) await sendPlayDp(message, dpState);
 }
 
 Module({
@@ -237,13 +253,14 @@ Module({
 })(async (message, match) => {
   const query = clean(match);
   if (!query) return;
+  const dpState = { sent: false };
   try {
     await message.react?.("🎵");
     try {
-      await sendRabbitSong(message, query, "play", { audioOnly: true, mentionJid: message.sender });
+      await sendRabbitSong(message, query, "play", { audioOnly: true, mentionJid: message.sender, dpState });
     } catch (rabbitError) {
       console.warn("[RABBIT:PLAY] Falling back to EliteProTech:", rabbitError?.message || rabbitError);
-      await sendSong(message, query, { audioOnly: true, mentionJid: message.sender });
+      await sendSong(message, query, { audioOnly: true, mentionJid: message.sender, dpState });
     }
     await message.react?.("✅");
   } catch (error) {

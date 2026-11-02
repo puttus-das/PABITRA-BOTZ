@@ -11,7 +11,7 @@ import { sendButtonCard, audioButton, ownerContactButton, githubRepoButton, BOT_
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const menuImgPath = path.join(__dirname, "bin", "tg_dp.jpg");
+const menuImgPath = path.join(__dirname, "bin", "menu_dp_branded.jpg");
 const name = config.botName;
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
@@ -174,8 +174,7 @@ Module({
       buttons.push(...pinnedButtons);
     }
 
-    // Keep the bot DP, branded text and all menu actions together in one card.
-    bodyText += `\n\n${BOT_PROMO_TEXT}`;
+    // The promo is printed into the menu DP so it remains visible when opened.
     buttons.push(githubRepoButton(), ownerButton);
     const sentIds = await sendButtonCard({
       conn: message.conn,
