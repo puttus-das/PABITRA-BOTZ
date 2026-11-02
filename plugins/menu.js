@@ -204,8 +204,6 @@ Module({
 
     // ".menu all" → retain the complete text list as a compatibility option.
     if (showAll) return await sendText(headerBox + "\n\n" + buildFullList() + footer);
-    // The home menu uses the legacy ButtonsMessage layout supplied by the owner.
-    if (!arg) return await sendLegacyButtonsMenu(message);
 
     const argParts = arg.split(/\s+/).filter(Boolean);
     const firstArg = argParts[0] || "";
