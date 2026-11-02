@@ -1,53 +1,60 @@
-# PABITRA-BOT V50
+# PABITRA-BOT
+
+![PABITRA-BOT profile image](plugins/bin/tg_dp.jpg)
+
+**━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━**
 
 Developer: 𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ  
 Owner: +919641092392  
 [WhatsApp Channel](https://whatsapp.com/channel/0029Vb8RL4F1HspsNlYYOE3e) · [Telegram Group](https://t.me/PABITRA_BOTZ)
 
-## Deploy PABITRA-BOT
+## Deploy and pair
 
-The app is a long-running Node.js service. On Heroku, the same app serves the website, pairing API, and media from one URL. The source can also run on Render, Railway, Koyeb, or an Oracle Cloud VM.
+The bot is a long-running Node.js process. Choose one backend host; the bundled website and pairing API can be served from the same backend URL.
 
 [![Deploy to Heroku](https://img.shields.io/badge/Deploy-Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white)](https://heroku.com/deploy?template=https://github.com/puttus-das/PABITRA-BOTZ)
+[![Deploy website to Vercel](https://img.shields.io/badge/Deploy-Website%20to%20Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ)
+[![Heroku pair instructions](https://img.shields.io/badge/Pair%20on-Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white)](#pair-whatsapp-on-heroku)
 [![Deploy to Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com/deploy?repo=https://github.com/puttus-das/PABITRA-BOTZ)
 [![Deploy to Railway](https://img.shields.io/badge/Deploy-Railway-7B2CF5?style=for-the-badge&logo=railway&logoColor=white)](https://railway.com/new?template=https://github.com/puttus-das/PABITRA-BOTZ)
 [![Deploy to Koyeb](https://img.shields.io/badge/Deploy-Koyeb-121212?style=for-the-badge&logo=koyeb&logoColor=white)](https://app.koyeb.com/)
 [![Deploy to Oracle Cloud](https://img.shields.io/badge/Deploy-Oracle%20Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white)](https://www.oracle.com/cloud/free/)
-[![Deploy with Docker](https://img.shields.io/badge/Run-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/get-started/)
+[![Run with Docker](https://img.shields.io/badge/Run-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/get-started/)
 
-### Recommended setup
+### Heroku account and uptime
 
-1. Choose one backend host and deploy the repository root. Heroku uses `Procfile`; Render's persistent-disk setup is [`render.yaml`](render.yaml), while the sleep/ephemeral free preview is [`render-free.yaml`](render-free.yaml); Railway uses [`railway.json`](railway.json); Koyeb and Oracle Cloud can build the included [`Dockerfile`](Dockerfile).
-2. Configure the environment variables below in the provider dashboard. Do not commit tokens, pairing sessions, or database secrets.
-3. For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. On Oracle Cloud, use a persistent host directory/volume. Render's included blueprint uses a paid persistent disk.
-4. The website is included under `website/` and is served by the app at `/`. Its pairing form calls `/pair/:number` on that same Heroku origin; no separate Vercel deployment or API URL is required.
+Heroku app code cannot prevent Heroku from deleting an inactive account. Heroku currently defines an account as inactive when its owner has not logged in to the Dashboard, CLI, or API for 365 days **and** has not used a paid resource for 6 months. Log in to Heroku periodically and keep your account and billing in good standing. See [Heroku account management](https://devcenter.heroku.com/articles/account-management).
 
-### Platform notes
+This repository's [`app.json`](app.json) uses an Eco web dyno by default. Eco web dynos sleep after 30 minutes without web traffic, so that setting does not promise 24/7 bot uptime. For an always-on dyno, choose a paid Basic dyno in Heroku; this can add recurring charges. Do not use a keep-alive pinger as a substitute: Heroku says monitoring pingers can keep Eco dynos awake and consume the shared monthly Eco hours. See [Eco dyno hours](https://devcenter.heroku.com/articles/eco-dyno-hours).
 
-- **Heroku:** `app.json` defaults to an Eco web dyno. Heroku sleeps Eco web dynos after 30 minutes without web traffic, cycles dynos at least daily, and resets their local filesystem on restart. Code cannot disable those platform rules; 24/7 operation requires a paid always-on dyno. This bot now retries transient WhatsApp reconnects indefinitely by default, but Heroku still needs durable external storage if the WhatsApp login must survive a dyno replacement. See [Eco dyno hours](https://devcenter.heroku.com/articles/eco-dyno-hours) and [dyno restarts](https://devcenter.heroku.com/articles/dyno-restarts).
-- **Render:** [`render.yaml`](render.yaml) provisions a paid web service with a `/data` persistent disk. [`render-free.yaml`](render-free.yaml) is only a no-cost preview: it can sleep and its local auth/data are ephemeral, so expect to reconnect WhatsApp after some restarts.
-- **Railway:** deploy with the included Dockerfile and `railway.json`, then add a Railway Volume mounted at `/data`. The default free credit may not cover a continuously running service.
-- **Koyeb:** create a Docker web service from this repository and use the included Dockerfile. Configure `AUTH_DIR` and `DATA_DIR` to a durable volume if available on your plan. The free instance scales to zero, so it can disconnect the bot.
-- **Oracle Cloud:** create an Always Free VM where capacity is available, install Docker, clone this repository, then run the container with a host directory mounted at `/data`. Keep the VM patched and protect SSH credentials. Free VM availability and idle-reclamation policies apply.
-- **Vercel:** optional for a separate static frontend. The combined Heroku website and pairing page are served by the long-running app process.
+Heroku also restarts dynos at least daily and discards local filesystem changes on restart. That is separate from account/app deletion. WhatsApp session files stored only on the dyno can be lost, so use durable external session storage or be prepared to pair again after a restart. See [Heroku dyno restarts](https://devcenter.heroku.com/articles/dyno-restarts).
 
-### Environment variables
+### Vercel
 
-Set at least `BOT_TOKEN_TELEGRAM` and `TG_GROUP_ID` for Telegram integration. `WEBSITE_URL` is optional and only needed when hosting the frontend on a separate origin; omit it for the same-origin Heroku website. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. Transient reconnects retry indefinitely by default; set `RECONNECT_LIMIT` only if you specifically want a finite cap. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
+The Vercel button opens the repository import flow. Set the Vercel project **Root Directory** to `website` to deploy the static website only. The WhatsApp/Telegram bot must run on a persistent backend such as Heroku; Vercel Functions have execution-duration limits and are not a replacement for this continuously running bot process. If the website is hosted separately, set `window.PABITRA_API_URL` in [`website/config.js`](website/config.js) to your backend's public origin so the pairing form reaches the correct API. See [Vercel Express deployment](https://vercel.com/docs/frameworks/backend/express) and [Vercel Function limits](https://vercel.com/docs/functions/limitations).
 
-## Website on Heroku
+### Pair WhatsApp on Heroku
 
-Deploy the repository root to Heroku. The app serves `website/index.html`, its CSS/JavaScript, images, and MP4 videos automatically, while the pairing form calls the same app's `/pair/:number` endpoint. The homepage is `/`; the JSON status endpoint is `/health`.
-
-## Pair WhatsApp
-
-After the backend is running and the Telegram bot is configured, add it to your group and send:
+The **Pair on Heroku** button above opens this section. A README cannot use one fixed pair URL for every deployment because Heroku assigns each app its own name. After deploying, open your app's home page at `https://<your-heroku-app-name>.herokuapp.com/` and submit a phone number with its country code. You can also add the bot to your Telegram group and send:
 
 ```text
 /pair +919641092392
 ```
 
-Or open the website and submit a phone number with country code. In WhatsApp, open **Linked Devices → Link a Device → Link with phone number instead**, then enter the returned code. Never share a pairing code.
+On WhatsApp, open **Linked Devices → Link a Device → Link with phone number instead**, then enter the returned code. Never share a pairing code.
+
+## Other deployment options
+
+- **Render:** [`render.yaml`](render.yaml) provisions a paid service with a persistent `/data` disk. [`render-free.yaml`](render-free.yaml) is only a no-cost preview; it may sleep and its local auth/data are ephemeral.
+- **Railway:** deploy with the included Dockerfile and [`railway.json`](railway.json), then add a Railway Volume mounted at `/data`. Free credits may not cover a continuously running bot.
+- **Koyeb:** create a Docker web service from this repository. Configure `AUTH_DIR` and `DATA_DIR` to use durable storage if your plan supports it.
+- **Oracle Cloud:** run the included Docker image on a VM and mount a persistent host directory at `/data`. VM availability and idle-reclamation policies apply.
+
+## Configuration
+
+Set `BOT_TOKEN_TELEGRAM` and `TG_GROUP_ID` for Telegram integration. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot. Plugin responses use the fixed signature `*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`.
+
+For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. Heroku's dyno filesystem is ephemeral, so local files alone do not survive dyno restarts.
 
 ## Run with Docker
 
@@ -67,11 +74,10 @@ docker run -d --name pabitra-bot --restart unless-stopped \
 
 ## Project layout
 
-- The repository root is the WhatsApp/Telegram Node.js backend.
-- `website/` is the static site served by Express from the same app as the bot and pairing API.
-- `render.yaml`, `render-free.yaml`, and `railway.json` provide deployment configuration for those platforms.
-- `package-lock.json` pins dependencies for `npm ci`; `.dockerignore` removes Git history, documentation, and local runtime data while keeping the website assets.
-- `Dockerfile` is the common container entry point for Docker, Koyeb, Railway, Render, and Oracle Cloud.
-- `Procfile` and `app.json` provide Heroku deployment metadata; the site and bot run together in one web process.
+- The repository root contains the WhatsApp/Telegram backend.
+- `website/` contains the static website, served by the backend or deployable separately.
+- `Procfile` and `app.json` provide Heroku deployment metadata.
+- `Dockerfile`, `render.yaml`, `render-free.yaml`, and `railway.json` provide other deployment configurations.
+- `package-lock.json` pins dependencies for `npm ci`.
 
-© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ
+© ━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━

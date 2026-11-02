@@ -76,7 +76,7 @@ Module({
       `-!!•- ${fancyText("Seen by")} •۵♡༏༏ (${ids.length}/${total}) 👁️\n` +
       `${list.length ? list.join("\n") : "—"}` +
       (closed ? `\n\n-!!•- ${fancyText(ids.length >= total ? "Everyone has seen this" : "Live tracking ended")} ${ids.length >= total ? "🎉" : "⏱️"}` : "") +
-      `\n\n-!!•- 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ 💜`
+      `\n\n*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`
     );
   };
 

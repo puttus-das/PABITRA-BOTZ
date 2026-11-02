@@ -56,7 +56,7 @@ Module({
   ];
 
   try {
-    const text = `*${config.ownerName}*\n\n📞 +${number}\nTap an action below to contact, copy the number, or generate a pairing code.`;
+    const text = `${config.brandLine}\n\n📞 +${number}\nTap an action below to contact, copy the number, or generate a pairing code.`;
     if (imagePath) {
       await message.conn.sendMessage(message.from, { image: fs.readFileSync(imagePath), caption: text }, { quoted: message.gift });
     } else {
@@ -67,7 +67,7 @@ Module({
       jid: message.from,
       buttons,
       body: "👤 Owner contact actions",
-      footer: config.ownerName,
+      footer: config.brandLine,
       quoted: message.gift,
     });
   } catch (error) {
@@ -75,11 +75,11 @@ Module({
     if (imagePath) {
       await message.conn.sendMessage(message.from, {
         image: fs.readFileSync(imagePath),
-        caption: `*${config.ownerName}*\nTap the link to chat with the owner: ${contactUrl}`,
+        caption: `${config.brandLine}\nTap the link to chat with the owner: ${contactUrl}`,
       }, { quoted: message.gift });
     } else {
       await message.conn.sendMessage(message.from, {
-        text: `*${config.ownerName}*\nhttps://wa.me/${number}`,
+        text: `${config.brandLine}\nhttps://wa.me/${number}`,
       }, { quoted: message.gift });
     }
   }

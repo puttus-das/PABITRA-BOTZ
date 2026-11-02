@@ -340,7 +340,7 @@ Module({
             messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
             interactiveMessage: P.create({
               body: P.Body.create({ text: ctx + `\n${config.brandLine}` }),
-              footer: P.Footer.create({ text: config.ownerName }),
+              footer: P.Footer.create({ text: config.brandLine }),
               header: P.Header.create({
                 hasMediaAttachment: !!imageMessage,
                 ...(imageMessage ? { imageMessage } : {}),

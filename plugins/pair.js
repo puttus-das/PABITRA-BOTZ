@@ -1,6 +1,7 @@
 // plugins/pair.js — .pair <number>  → WhatsApp pairing code (same system as Telegram /pair)
 // The code comes with a [Copy Code] button. Fixed code: PAIR_CODE env or POBIPAUL (POBI-PAUL).
 import { Module } from "../lib/plugins.js";
+import config from "../config.js";
 import { manager } from "../lib/client.js";
 import { markPairing } from "../lib/pairState.js";
 import { proto, generateWAMessageFromContent } from "baileys";
@@ -52,12 +53,12 @@ function waitForSessionOpen(sessionId, timeoutMs = 22_000) {
 }
 
 const successText = (digits, code) =>
-  `-!!•- 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ᴘᴀɪʀɪɴɢ •۵♡༏༏ 🔗\n` +
+  `${config.brandLine}\n` +
   `-!!•- ᴘᴀɪʀ ᴄᴏᴅᴇ ɢᴇɴᴇʀᴀᴛᴇᴅ •۵♡༏༏ ✅\n\n` +
   `-!!•- ɴᴜᴍʙᴇʀ •۵♡༏༏: +${digits} 📱\n` +
   `-!!•- ᴄᴏᴅᴇ •۵♡༏༏: *${code}* 🔑\n\n` +
   `_ᴏᴘᴇɴ ᴡʜᴀᴛsᴀᴘᴘ → ʟɪɴᴋᴇᴅ ᴅᴇᴠɪᴄᴇs → ʟɪɴᴋ ᴀ ᴅᴇᴠɪᴄᴇ → ᴇɴᴛᴇʀ ᴛʜɪs ᴄᴏᴅᴇ._\n\n` +
-  `-!!•- 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ •۵♡༏༏ 💜`;
+  `${config.brandLine}`;
 
 // code message with a [Copy Code] button; plain text if the button card is refused
 async function sendCode(message, digits, code) {
@@ -85,7 +86,7 @@ async function sendCode(message, digits, code) {
         messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
         interactiveMessage: P.create({
           body: P.Body.create({ text: `*𝐏ᴀɪʀɪɴɢ ᴄᴏᴅᴇ: ${code}*` }),
-          footer: P.Footer.create({ text: "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ" }),
+          footer: P.Footer.create({ text: config.brandLine }),
           header: P.Header.create({ hasMediaAttachment: false }),
           nativeFlowMessage: P.NativeFlowMessage.create({ buttons: [{
             name: "cta_copy",
@@ -117,7 +118,7 @@ Module({
         `*-!!•- 𝐔ꜱᴀɢᴇ •۵♡༏༏: .pair 919876543210 📱*\n` +
         `*-!!•- 𝐒ᴇɴᴅ ᴛʜᴇ ɴᴜᴍʙᴇʀ ᴡɪᴛʜ ᴄᴏᴜɴᴛʀʏ ᴄᴏᴅᴇ,*\n` +
         `*ɴᴏ + ᴏʀ ꜱᴘᴀᴄᴇꜱ ɴᴇᴇᴅᴇᴅ.*\n\n` +
-        `*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*`
+        `*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`
     );
   }
 

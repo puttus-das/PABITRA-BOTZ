@@ -33,7 +33,7 @@ Module({
       { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👑 Owner", id: ".owner" }) },
     ],
     body: "Ping actions",
-    footer: "𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ",
+    footer: "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*",
     quoted: message.gift,
   });
 });

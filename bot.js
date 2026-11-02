@@ -724,7 +724,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const telegramPingText = () => `━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━`;
+  const telegramPingText = () => `*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`;
   async function sendTelegramPing(chatId, replyId) {
     await safeReply(chatId, telegramPingText(), replyId ? { reply_to_message_id: replyId } : {});
     await safeReply(chatId, `🎧 ${f("Tap the single button below for audio options.")}`, {
