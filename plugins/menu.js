@@ -55,14 +55,19 @@ async function sendLegacyButtonsMenu(message) {
   const thumbnail = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : getMenuThumb();
   const isPublic = db.get(message.botnum, "mode", true) === true;
   const totalCommands = getCommands().filter((cmd) => cmd?.command && cmd.command !== "undefined").length;
+  const ownerDigits = String(config.owner || "").replace(/\D/g, "");
+  const ownerPhone = ownerDigits.startsWith("91") && ownerDigits.length === 12
+    ? `+91 ${ownerDigits.slice(2, 7)} ${ownerDigits.slice(7)}`
+    : `+${ownerDigits}`;
   const menuText =
 `┌────〔 ✨ *${name}* ✨ 〕────┐
 │ 👋 ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ
 │ 👑 *ᴏᴡɴᴇʀ*    ➜ ${config.ownerName}
+│ 📞 *ɴᴜᴍʙᴇʀ*  ➜ ${ownerPhone}
 │ ⚙️ *ᴘʀᴇғɪx*   ➜ ${config.prefix}
 │ 🔒 *ᴍᴏᴅᴇ*     ➜ ${isPublic ? "ᴘᴜʙʟɪᴄ" : "ᴘʀɪᴠᴀᴛᴇ"}
 │ 🧩 *ᴘʟᴜɢɪɴs*  ➜ ${totalCommands}
-│ 🏷️ *ᴠᴇʀsɪᴏɴ*  ➜ 3.0.0
+│ 📋 *ᴄᴏᴍᴍᴀɴᴅs* ➜ ${config.prefix}menu browse
 └────────────────────────┘`;
   const payload = {
     buttonsMessage: {
@@ -93,7 +98,7 @@ async function sendLegacyButtonsMenu(message) {
     rememberCard(outgoing.key.id);
   } catch (error) {
     console.error("[menu] ButtonsMessage menu failed:", error?.message || error);
-    await message.send("Use .ping, .alive, or .owner.");
+    await message.send(`Use ${config.prefix}ping, ${config.prefix}alive, or ${config.prefix}owner.`);
   }
 }
 const name = config.botName;
@@ -199,6 +204,8 @@ Module({
 
     // ".menu all" → retain the complete text list as a compatibility option.
     if (showAll) return await sendText(headerBox + "\n\n" + buildFullList() + footer);
+    // The home menu uses the legacy ButtonsMessage layout supplied by the owner.
+    if (!arg) return await sendLegacyButtonsMenu(message);
 
     const argParts = arg.split(/\s+/).filter(Boolean);
     const firstArg = argParts[0] || "";

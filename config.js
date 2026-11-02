@@ -19,7 +19,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || "production";
 // Helper to parse boolean values
 const isTrue = (x) => x === "true" || x === true;
 const BOT_NAME = process.env.BOT_NAME || "━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━";
-const OWNER_NAME = process.env.OWNER_NAME || "━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━";
+const OWNER_NAME = process.env.OWNER_NAME || "PABITRA-BOT";
 const BRAND_LINE = process.env.BRAND_LINE || "*━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 
 // Database URL

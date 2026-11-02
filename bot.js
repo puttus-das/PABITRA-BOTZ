@@ -14,6 +14,25 @@ import config from "./config.js";
 
 const __dirname_tg = path.dirname(fileURLToPath(import.meta.url));
 const TG_DP_PATH = path.join(__dirname_tg, "plugins", "bin", "tg_dp.jpg");
+const TG_MENU_DIR = path.join(__dirname_tg, "plugins", "bin", "menu");
+let lastTgMenuImage = "";
+function pickTgMenuImagePath() {
+  try {
+    const inMenuDir = fs.readdirSync(TG_MENU_DIR)
+      .filter((file) => /\.(jpe?g|png)$/i.test(file) && file !== "menu-pabitra-new.jpg")
+      .map((file) => path.join(TG_MENU_DIR, file));
+    const legacyImages = ["menu.jpg", "menu_pabitra_old.jpg", "menu2-thumb.jpg", "menu_thumb.jpg"]
+      .map((file) => path.join(__dirname_tg, "plugins", "bin", file))
+      .filter((file) => fs.existsSync(file));
+    const images = [...new Set([...inMenuDir, ...legacyImages])];
+    const choices = images.length > 1 ? images.filter((file) => file !== lastTgMenuImage) : images;
+    if (choices.length) {
+      lastTgMenuImage = choices[Math.floor(Math.random() * choices.length)];
+      return lastTgMenuImage;
+    }
+  } catch {}
+  return TG_DP_PATH;
+}
 const BOT_NAME = config.botName;
 // welcome videos live in plugins/bin/welcome (random one per new member, thumbnails ≤320px)
 
@@ -182,14 +201,18 @@ export default async function initializeTelegramBot(manager) {
 
   // Pabitra-Bot dp image + caption (text only if the image cannot be sent)
   let dpBuffer = null;
-  async function sendDp(chatId, caption, opts = {}) {
+  async function sendDp(chatId, caption, opts = {}, randomMenuImage = false) {
     try {
-      if (!dpBuffer) dpBuffer = fs.readFileSync(TG_DP_PATH);
+      const photoPath = randomMenuImage ? pickTgMenuImagePath() : TG_DP_PATH;
+      const photoBuffer = randomMenuImage ? fs.readFileSync(photoPath) : (dpBuffer ||= fs.readFileSync(TG_DP_PATH));
       return await tbot.sendPhoto(
         chatId,
-        dpBuffer,
+        photoBuffer,
         { caption, parse_mode: "HTML", ...opts },
-        { filename: "pabitra-bot.jpg", contentType: "image/jpeg" }
+        {
+          filename: path.basename(photoPath),
+          contentType: path.extname(photoPath).toLowerCase() === ".png" ? "image/png" : "image/jpeg",
+        }
       );
     } catch (e) {
       console.error("[bot.js] sendPhoto failed, sending text:", e?.message);
@@ -853,11 +876,11 @@ export default async function initializeTelegramBot(manager) {
     if (!canUse(msg)) return true;
 
     if (cmd === "start") {
-      await sendDp(chatId, welcomeCaption(), { reply_to_message_id: replyId, reply_markup: mainKeyboard() });
+      await sendDp(chatId, welcomeCaption(), { reply_to_message_id: replyId, reply_markup: mainKeyboard() }, true);
       return true;
     }
     if (cmd === "menu" || cmd === "help") {
-      await sendDp(chatId, buildHelpMessage(), { reply_to_message_id: replyId, reply_markup: menuKeyboard() });
+      await sendDp(chatId, buildHelpMessage(), { reply_to_message_id: replyId, reply_markup: menuKeyboard() }, true);
       return true;
     }
     if (cmd === "ping") {
@@ -896,7 +919,7 @@ export default async function initializeTelegramBot(manager) {
 
     if (data.startsWith("cmd:")) {
       const what = data.slice(4);
-      if (what === "menu") await sendDp(chatId, buildHelpMessage(), { reply_markup: menuKeyboard() });
+      if (what === "menu") await sendDp(chatId, buildHelpMessage(), { reply_markup: menuKeyboard() }, true);
       else if (what === "tagall") await sendTelegramTagall(fake, chatId, replyId);
       else if (what === "ping") {
         await safeReply(chatId, telegramPingText());
@@ -1161,9 +1184,7 @@ export default async function initializeTelegramBot(manager) {
     if (cmd === "ping") {
       if (isPrivate(msg)) return redirectToGroup(chatId, replyId);
       if (!isAllowedGroup(msg)) return;
-      const start = Date.now();
-      const m = await safeReply(chatId, "🏓 Pong!", { reply_to_message_id: replyId });
-      return safeEdit(chatId, m.message_id, `🏓 <b>Pong!</b>\n⚡ <b>${Date.now() - start}ms</b>`);
+      return safeReply(chatId, telegramPingText(), { reply_to_message_id: replyId });
     }
 
     // /pair
