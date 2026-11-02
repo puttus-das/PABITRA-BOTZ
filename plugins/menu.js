@@ -5,9 +5,8 @@ import path from "path";
 import { db } from "../lib/client.js";
 import { Module, getCommands } from "../lib/plugins.js";
 import config from "../config.js";
-import { proto } from "baileys";
 import { sendPing } from "../lib/pingCore.js";
-import { sendButtonCard, audioButton } from "../lib/buttonCards.js";
+import { sendButtonCard, audioButton, ownerContactButton } from "../lib/buttonCards.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,6 +102,8 @@ Module({
     const showAll = arg === "all";
     const prefix = config.prefix;
     const pairUrl = "https://t.me/PABITRA_BOTZ";
+    const ownerNumber = String(config.owner || "919641092392").replace(/\D/g, "");
+    const ownerChatUrl = `https://wa.me/${ownerNumber}`;
 
     // ── bold blocks ──
     const catBlock = (cat) => {
@@ -140,18 +141,23 @@ Module({
     }
 
     // ── Screenshot-style product menu or paginated category buttons ──
-    const P = proto.Message.InteractiveMessage;
-    let bodyText = `${headerBox}\n\n${buildFullList().trim()}${footer}`;
+    let bodyText = headerBox;
     const quickButton = (label, command) => ({
       name: "quick_reply",
       buttonParamsJson: JSON.stringify({ display_text: label, id: `${prefix}${command}` }),
     });
+    const ownerButton = {
+      name: "cta_url",
+      buttonParamsJson: JSON.stringify({ display_text: "📩 Contact Owner", url: ownerChatUrl, merchant_url: ownerChatUrl }),
+    };
     const pinnedButtons = [
       quickButton("━[ 𝐏ɪɴɢ ]━", "ping"),
       quickButton("━[ 𝐀ᴜᴅɪᴏ ]━", "audio"),
     ];
     let buttons;
     if (!arg) {
+      bodyText = `${headerBox}\n\n*${fancy("AVAILABLE PACKAGES")}*\n` +
+        categories.map((category) => `◈ ${fancy(category)} (${grouped[category].length})`).join("\n");
       buttons = [
         quickButton("ᴍᴇɴᴜ ☰", "menu"),
         quickButton("ᴏᴡɴᴇʀ ♛", "owner"),
@@ -160,7 +166,6 @@ Module({
         quickButton("ᴘʟᴀʏ ▶", "audio"),
         quickButton("ᴠɪᴅᴇᴏ ▷", "musicvideo"),
         quickButton("ᴍᴜsɪᴄ ♬", "audio"),
-        quickButton("🎧 AUDIO", "audio"),
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "🔑 Pair Code", url: pairUrl, merchant_url: pairUrl }) },
       ];
     } else if (firstArg === "browse") {
@@ -170,7 +175,7 @@ Module({
       const page = Math.min(requestedPage, totalPages);
       const visible = categories.slice((page - 1) * pageSize, page * pageSize);
       bodyText = `${headerBox}\n\n*${fancy("command categories")} — ${page}/${totalPages}*\n\n` +
-        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n") + footer;
+        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n");
       buttons = visible.map((c) => quickButton(`━[ ${fancy(c)} ]━`, `menu ${c} 1`));
       if (page > 1) buttons.push(quickButton("━[ 𝐏ʀᴇᴠ ]━", `menu browse ${page - 1}`));
       if (page < totalPages) buttons.push(quickButton("━[ 𝐍ᴇxᴛ ]━", `menu browse ${page + 1}`));
@@ -184,33 +189,25 @@ Module({
       const page = Math.min(requestedPage, totalPages);
       const visible = commands.slice((page - 1) * pageSize, page * pageSize);
       bodyText = `${headerBox}\n\n*${fancy(category)} — ${fancy("commands")} ${page}/${totalPages}*\n\n` +
-        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n") + footer;
+        visible.map((c) => `*┃ ◈ ${fancy(c)}*`).join("\n");
       buttons = visible.map((c) => quickButton(`━[ ${fancy(c)} ]━`, c));
       if (page > 1) buttons.push(quickButton("━[ 𝐏ʀᴇᴠ ]━", `menu ${category} ${page - 1}`));
       if (page < totalPages) buttons.push(quickButton("━[ 𝐍ᴇxᴛ ]━", `menu ${category} ${page + 1}`));
       buttons.push(...pinnedButtons);
     }
 
-    // Send a normal picture (not a catalog/product header) so WhatsApp does
-    // not expand the menu image into a tall product-style card.
+    // Keep the randomly chosen image, body and all menu actions together in
+    // one compact interactive card. The helper resizes the artwork to a thumb.
     const imgPath = pickMenuImg();
-    try {
-      await message.conn.sendMessage(
-        message.from,
-        { image: fs.readFileSync(imgPath), caption: `${name}\n${config.brandLine}` },
-        { quoted: message.gift }
-      );
-    } catch (e) {
-      console.error("❌ Menu image send failed:", e?.message || e);
-    }
-    await sendText(bodyText);
+    buttons.push(ownerButton);
     const sentIds = await sendButtonCard({
       conn: message.conn,
       jid: message.from,
       buttons,
-      body: `📋 ${name} — choose an option`,
+      body: bodyText,
       footer: config.brandLine,
       quoted: message.gift,
+      image: fs.existsSync(imgPath) ? fs.readFileSync(imgPath) : undefined,
     });
     sentIds.forEach(rememberCard);
   } catch (err) {
@@ -293,7 +290,7 @@ Module({
     await sendButtonCard({
       conn: message.conn,
       jid: message.from,
-      buttons: [audioButton()],
+      buttons: [audioButton(), ownerContactButton()],
       body: ctx.trim(),
       footer: config.brandLine,
       quoted: message.gift,

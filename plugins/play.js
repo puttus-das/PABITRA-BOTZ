@@ -13,6 +13,27 @@ const RABBIT_BASE = (process.env.RABBIT_API_BASE || "https://rabbitapi.zone.id")
 const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36";
 const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 const clean = (value) => String(value || "").trim();
+function ownerVCardQuote() {
+  const phone = String(config.owner || "919641092392").replace(/\D/g, "");
+  const displayName = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
+  return {
+    key: { fromMe: false, participant: `${phone}@s.whatsapp.net`, remoteJid: "status@broadcast" },
+    message: {
+      contactMessage: {
+        displayName,
+        vcard: [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          `N:;${displayName};;;`,
+          `FN:${displayName}`,
+          `item1.TEL;waid=${phone}:${phone}`,
+          "item1.X-ABLabel:WhatsApp",
+          "END:VCARD",
+        ].join("\n"),
+      },
+    },
+  };
+}
 ffmpeg.setFfmpegPath(ffmpegPath.path);
 
 function errorText(data, status) {
@@ -78,7 +99,7 @@ async function sendRabbitSong(message, query, route = "play") {
       fileName: `${String(song.title || query).replace(/[\\/:*?"<>|\r\n]/g, " ").slice(0, 90) || "song"}.mp3`,
       caption: `🎵 *${song.title || query}*${song.duration ? `\n⏱ ${song.duration}` : ""}\n${CAPTION}`,
     },
-    { quoted: message.gift }
+    { quoted: ownerVCardQuote() }
   );
 }
 
@@ -198,7 +219,7 @@ async function sendSong(message, query) {
       ptt: false,
       fileName: `${video.title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || "song"}.mp3`,
     },
-    { quoted: message.gift }
+    { quoted: ownerVCardQuote() }
   );
 }
 
