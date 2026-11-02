@@ -459,9 +459,75 @@ Module({
 *RAM Usage:* ${ramUsedMB} MB
 *Uptime:* ${hours}h ${minutes}m ${seconds}s
 `;
-    await message.conn.sendMessage(message.from, {
-      image: fs.readFileSync(pickMenuImg()),
-      caption: ctx + `\n${config.brandLine}`,
+    const imagePath = pickMenuImg();
+    let imageMessage = null;
+    const cached = menuMediaCache.get(imagePath);
+    if (cached && Date.now() - cached.t < 6 * 60 * 60 * 1000) {
+      imageMessage = cached.m;
+    } else {
+      try {
+        const media = await withTimeout(
+          prepareWAMessageMedia(
+            { image: fs.readFileSync(imagePath) },
+            { upload: message.conn.waUploadToServer }
+          ),
+          60_000,
+          "alive image"
+        );
+        imageMessage = media.imageMessage;
+        menuMediaCache.set(imagePath, { m: imageMessage, t: Date.now() });
+      } catch (error) {
+        console.error("[alive] image upload failed; sending the button card without an image:", error?.message || error);
+      }
+    }
+    const P = proto.Message.InteractiveMessage;
+    const bizNodes = [
+      {
+        tag: "biz",
+        attrs: {},
+        content: [
+          {
+            tag: "interactive",
+            attrs: { type: "native_flow", v: "1" },
+            content: [{ tag: "native_flow", attrs: { v: "9", name: "mixed" } }],
+          },
+        ],
+      },
+    ];
+    if (!message.from.endsWith("@g.us")) bizNodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
+    const outgoing = generateWAMessageFromContent(
+      message.from,
+      {
+        viewOnceMessage: {
+          message: {
+            messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+            interactiveMessage: P.create({
+              body: P.Body.create({ text: ctx + `\n${config.brandLine}` }),
+              footer: P.Footer.create({ text: config.ownerName }),
+              header: P.Header.create({
+                hasMediaAttachment: !!imageMessage,
+                ...(imageMessage ? { imageMessage } : {}),
+              }),
+              nativeFlowMessage: P.NativeFlowMessage.create({
+                buttons: [
+                  {
+                    name: "quick_reply",
+                    buttonParamsJson: JSON.stringify({
+                      display_text: "━[ 𝐀ᴜᴅɪᴏ ]━",
+                      id: `${config.prefix || "."}audio`,
+                    }),
+                  },
+                ],
+              }),
+            }),
+          },
+        },
+      },
+      { quoted: message.gift, userJid: message.conn.user?.id }
+    );
+    await message.conn.relayMessage(message.from, outgoing.message, {
+      messageId: outgoing.key.id,
+      additionalNodes: bizNodes,
     });
   } catch (err) {
     console.error("❌ Alive command error:", err);
