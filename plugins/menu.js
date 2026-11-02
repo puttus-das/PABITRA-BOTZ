@@ -228,8 +228,8 @@ Module({
     let buttons;
     if (!arg) {
       buttons = [
-        quickButton("ᴘɪɴɢ ᯤ", "ping"),
-        quickButton("ᴀʟɪᴠᴇ ✆", "alive"),
+        quickButton("ping", "owner"),
+        quickButton("alive", "list"),
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "🔑 Pair Code", url: pairUrl, merchant_url: pairUrl }) },
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: config.ownerName, url: ownerUrl, merchant_url: ownerUrl }) },
       ];
