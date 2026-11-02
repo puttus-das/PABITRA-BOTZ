@@ -11,7 +11,7 @@ import { sendButtonCard, audioButton, ownerContactButton, githubRepoButton, BOT_
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const menuImgPath = path.join(__dirname, "bin", "menu_dp_branded.jpg");
+const menuImgPath = path.join(__dirname, "bin", "tg_dp.jpg");
 const name = config.botName;
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
@@ -79,7 +79,7 @@ Module({
     const arg = (match || "").trim().toLowerCase();
     const showAll = arg === "all";
     const prefix = config.prefix;
-    const pairUrl = "https://t.me/PABITRA_BOTZ";
+    const telegramGroupUrl = "https://t.me/PABITRA_BOTZ";
     const ownerNumber = String(config.owner || "919641092392").replace(/\D/g, "");
     const ownerChatUrl = `https://wa.me/${ownerNumber}`;
 
@@ -128,23 +128,22 @@ Module({
       name: "cta_url",
       buttonParamsJson: JSON.stringify({ display_text: "📩 Contact Owner", url: ownerChatUrl, merchant_url: ownerChatUrl }),
     };
+    const telegramGroupButton = {
+      name: "cta_url",
+      buttonParamsJson: JSON.stringify({ display_text: "✈ Telegram Group", url: telegramGroupUrl, merchant_url: telegramGroupUrl }),
+    };
     const pinnedButtons = [
       quickButton("━[ 𝐏ɪɴɢ ]━", "ping"),
-      quickButton("━[ 𝐀ᴜᴅɪᴏ ]━", "audio"),
     ];
     let buttons;
     if (!arg) {
       bodyText = `${headerBox}\n\n*${fancy("AVAILABLE PACKAGES")}*\n` +
         categories.map((category) => `◈ ${fancy(category)} (${grouped[category].length})`).join("\n");
       buttons = [
-        quickButton("ᴍᴇɴᴜ ☰", "menu"),
-        quickButton("ᴏᴡɴᴇʀ ♛", "owner"),
-        quickButton("ᴘɪɴɢ ᯤ", "ping"),
-        quickButton("ᴀʟɪᴠᴇ ✆", "alive"),
-        quickButton("ᴘʟᴀʏ ▶", "audio"),
-        quickButton("ᴠɪᴅᴇᴏ ▷", "musicvideo"),
-        quickButton("ᴍᴜsɪᴄ ♬", "audio"),
-        { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "🔑 Pair Code", url: pairUrl, merchant_url: pairUrl }) },
+        quickButton("Browse", "menu browse 1"),
+        quickButton("Ping", "ping"),
+        quickButton("Alive", "alive"),
+        quickButton("Play", "audio"),
       ];
     } else if (firstArg === "browse") {
       const pageSize = 2;
@@ -174,8 +173,9 @@ Module({
       buttons.push(...pinnedButtons);
     }
 
-    // The promo is printed into the menu DP so it remains visible when opened.
-    buttons.push(githubRepoButton(), ownerButton);
+    // Keep the photo clean; show the promo beneath it in the card body.
+    bodyText += `\n\n*${BOT_PROMO_TEXT}*`;
+    buttons.push(telegramGroupButton, githubRepoButton(), ownerButton);
     const sentIds = await sendButtonCard({
       conn: message.conn,
       jid: message.from,
@@ -184,6 +184,7 @@ Module({
       footer: config.brandLine,
       quoted: message.gift,
       image: fs.existsSync(menuImgPath) ? fs.readFileSync(menuImgPath) : undefined,
+      imageMaxDimension: 1024,
     });
     sentIds.forEach(rememberCard);
   } catch (err) {
@@ -272,6 +273,7 @@ Module({
       footer: config.brandLine,
       quoted: message.gift,
       image: fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : undefined,
+      imageMaxDimension: 1024,
     });
   } catch (err) {
     console.error("❌ Alive command error:", err);

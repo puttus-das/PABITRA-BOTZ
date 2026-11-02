@@ -1,12 +1,7 @@
 import { Module } from "../lib/plugins.js";
 import { sendButtonCard, audioButton, ownerContactButton, githubRepoButton, BOT_PROMO_TEXT } from "../lib/buttonCards.js";
 import { getTheme } from "../Themes/themes.js";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 const theme = getTheme();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BOT_IMAGE_PATH = path.join(__dirname, "bin", "tg_dp.jpg");
 Module({
   command: "tagall",
   package: "group",
@@ -89,14 +84,12 @@ Module({
     }
     tagText += `╰────────────❍\n\n${BOT_PROMO_TEXT}`;
     const mentions = participants.map((p) => p.id);
-    const image = fs.existsSync(BOT_IMAGE_PATH) ? fs.readFileSync(BOT_IMAGE_PATH) : undefined;
     await sendButtonCard({
       conn,
       jid: from,
       buttons: [audioButton(), githubRepoButton(), ownerContactButton()],
       body: tagText,
       quoted: m.raw,
-      image,
       mentions,
     });
   } catch (err) {
