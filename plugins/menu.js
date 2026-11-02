@@ -6,34 +6,12 @@ import { db } from "../lib/client.js";
 import { Module, getCommands } from "../lib/plugins.js";
 import config from "../config.js";
 import { sendPing } from "../lib/pingCore.js";
-import { sendButtonCard, audioButton, ownerContactButton } from "../lib/buttonCards.js";
+import { sendButtonCard, audioButton, ownerContactButton, githubRepoButton, BOT_PROMO_TEXT } from "../lib/buttonCards.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const menuImgPath = path.join(__dirname, "bin", "menu.jpg");
-// Keep the existing menu DP files and choose a different old image on each
-// home-menu request. The newer optional DP is intentionally not used here.
-const MENU_DIR = path.join(__dirname, "bin", "menu");
-let _lastMenuImg = "";
-const pickMenuImg = () => {
-  try {
-    const menuDirImages = fs.readdirSync(MENU_DIR)
-      .filter((x) => /\.(jpe?g|png)$/i.test(x))
-      .filter((x) => x !== "menu-pabitra-new.jpg")
-      .map((x) => path.join(MENU_DIR, x));
-    const oldImages = ["menu.jpg", "menu_pabitra_old.jpg", "menu2-thumb.jpg", "menu_thumb.jpg"]
-      .map((x) => path.join(__dirname, "bin", x))
-      .filter((x) => fs.existsSync(x));
-    const all = [...new Set([...menuDirImages, ...oldImages])];
-    const pool = all.length > 1 ? all.filter((x) => x !== _lastMenuImg) : all;
-    if (pool.length) {
-      _lastMenuImg = pool[Math.floor(Math.random() * pool.length)];
-      return _lastMenuImg;
-    }
-  } catch {}
-  return menuImgPath;
-};
+const menuImgPath = path.join(__dirname, "bin", "tg_dp.jpg");
 const name = config.botName;
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
@@ -196,10 +174,9 @@ Module({
       buttons.push(...pinnedButtons);
     }
 
-    // Keep the randomly chosen image, body and all menu actions together in
-    // one compact interactive card. The helper resizes the artwork to a thumb.
-    const imgPath = pickMenuImg();
-    buttons.push(ownerButton);
+    // Keep the bot DP, branded text and all menu actions together in one card.
+    bodyText += `\n\n${BOT_PROMO_TEXT}`;
+    buttons.push(githubRepoButton(), ownerButton);
     const sentIds = await sendButtonCard({
       conn: message.conn,
       jid: message.from,
@@ -207,7 +184,7 @@ Module({
       body: bodyText,
       footer: config.brandLine,
       quoted: message.gift,
-      image: fs.existsSync(imgPath) ? fs.readFileSync(imgPath) : undefined,
+      image: fs.existsSync(menuImgPath) ? fs.readFileSync(menuImgPath) : undefined,
     });
     sentIds.forEach(rememberCard);
   } catch (err) {
@@ -285,12 +262,13 @@ Module({
 *Host:* ${hostname}
 *RAM Usage:* ${ramUsedMB} MB
 *Uptime:* ${hours}h ${minutes}m ${seconds}s
+\n${BOT_PROMO_TEXT}
 `;
     const imagePath = path.join(__dirname, "bin", "tg_dp.jpg");
     await sendButtonCard({
       conn: message.conn,
       jid: message.from,
-      buttons: [audioButton(), ownerContactButton()],
+      buttons: [audioButton(), githubRepoButton(), ownerContactButton()],
       body: ctx.trim(),
       footer: config.brandLine,
       quoted: message.gift,

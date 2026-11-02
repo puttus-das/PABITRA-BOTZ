@@ -1,20 +1,12 @@
 import { Module } from "../lib/plugins.js";
-import { sendAudioButtonCard } from "../lib/buttonCards.js";
+import { sendButtonCard, audioButton, ownerContactButton, githubRepoButton, BOT_PROMO_TEXT } from "../lib/buttonCards.js";
 import { getTheme } from "../Themes/themes.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 const theme = getTheme();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const menuDir = path.join(__dirname, "bin", "menu");
 const BOT_IMAGE_PATH = path.join(__dirname, "bin", "tg_dp.jpg");
-function menuImage() {
-  try {
-    const files = fs.readdirSync(menuDir).filter((f) => /\.(jpe?g|png)$/i.test(f));
-    if (files.length) return fs.readFileSync(path.join(menuDir, files[Math.floor(Math.random() * files.length)]));
-  } catch {}
-  return null;
-}
 Module({
   command: "tagall",
   package: "group",
@@ -95,15 +87,18 @@ Module({
     for (const p of others) {
       tagText += `│${getEmoji()} ᩧ𝆺ྀི𝅥 @${p.id.split("@")[0]}\n`;
     }
-    tagText += `╰────────────❍`;
+    tagText += `╰────────────❍\n\n${BOT_PROMO_TEXT}`;
     const mentions = participants.map((p) => p.id);
-    const image = fs.existsSync(BOT_IMAGE_PATH) ? fs.readFileSync(BOT_IMAGE_PATH) : menuImage();
-    await conn.sendMessage(
-      from,
-      image ? { image, caption: tagText, mentions } : { text: tagText, mentions },
-      { quoted: m.raw }
-    );
-    await sendAudioButtonCard(conn, from, { quoted: m.raw });
+    const image = fs.existsSync(BOT_IMAGE_PATH) ? fs.readFileSync(BOT_IMAGE_PATH) : undefined;
+    await sendButtonCard({
+      conn,
+      jid: from,
+      buttons: [audioButton(), githubRepoButton(), ownerContactButton()],
+      body: tagText,
+      quoted: m.raw,
+      image,
+      mentions,
+    });
   } catch (err) {
     console.error("tagall error:", err);
     m.sendreply("❌ An error occurred while tagging members.");
