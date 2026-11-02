@@ -2,7 +2,7 @@
 
 ![PABITRA-BOT profile image](plugins/bin/tg_dp.jpg)
 
-**━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━**
+**© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━**
 
 Developer: 𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ  
 Owner: +919641092392  
@@ -52,7 +52,7 @@ On WhatsApp, open **Linked Devices → Link a Device → Link with phone number 
 
 ## Configuration
 
-Set `BOT_TOKEN_TELEGRAM` and `TG_GROUP_ID` for Telegram integration. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot. Plugin responses use the fixed signature `*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`.
+Set `BOT_TOKEN_TELEGRAM` and `TG_GROUP_ID` for Telegram integration. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot. Plugin responses use the fixed signature `*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*`.
 
 For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. Heroku's dyno filesystem is ephemeral, so local files alone do not survive dyno restarts.
 
@@ -80,4 +80,4 @@ docker run -d --name pabitra-bot --restart unless-stopped \
 - `Dockerfile`, `render.yaml`, `render-free.yaml`, and `railway.json` provide other deployment configurations.
 - `package-lock.json` pins dependencies for `npm ci`.
 
-© ━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━
+**© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━**

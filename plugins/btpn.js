@@ -1,5 +1,5 @@
 import { Module } from "../lib/plugins.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 Module({
   command: "btpn",
@@ -25,7 +25,7 @@ Module({
     { text: `*${emoji} } Ꭾ❤️‍🩹ŇᎶ: ${latency} ๓Ş*`, contextInfo: { mentionedJid: [message.sender] } },
     { quoted: message.gift }
   );
-  await sendSingleButtonCards({
+  await sendButtonCard({
     conn: message.conn,
     jid: message.from,
     buttons: [
@@ -33,7 +33,7 @@ Module({
       { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👑 Owner", id: ".owner" }) },
     ],
     body: "Ping actions",
-    footer: "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*",
+    footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
     quoted: message.gift,
   });
 });

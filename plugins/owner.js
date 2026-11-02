@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import config from "../config.js";
 import { Module } from "../lib/plugins.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -62,7 +62,7 @@ Module({
     } else {
       await message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
     }
-    await sendSingleButtonCards({
+    await sendButtonCard({
       conn: message.conn,
       jid: message.from,
       buttons,

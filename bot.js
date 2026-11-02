@@ -724,7 +724,7 @@ export default async function initializeTelegramBot(manager) {
   }
 
   // ── NEW COMMANDS (welcome, menu, ping, id, play, song, music) ─────────────────
-  const telegramPingText = () => `*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*`;
+  const telegramPingText = () => `*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*`;
   async function sendTelegramPing(chatId, replyId) {
     await safeReply(chatId, telegramPingText(), replyId ? { reply_to_message_id: replyId } : {});
     await safeReply(chatId, `🎧 ${f("Tap the single button below for audio options.")}`, {
@@ -738,24 +738,17 @@ export default async function initializeTelegramBot(manager) {
 
   const mainKeyboard = () => ({
     inline_keyboard: [
-      [{ text: `📋 ${f("menu")}`, callback_data: "cmd:menu" }],
-      [{ text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }],
-      [{ text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }],
-      [{ text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
-      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }],
-      [{ text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
+      [{ text: `📋 ${f("menu")}`, callback_data: "cmd:menu" }, { text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }],
+      [{ text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }, { text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
+      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }, { text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
     ],
   });
   const menuKeyboard = () => ({
     inline_keyboard: [
-      [{ text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }],
-      [{ text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }],
-      [{ text: `👥 ${f("tagall")}`, callback_data: "cmd:tagall" }],
-      [{ text: `▶️ ${f("play")}`, callback_data: "cmd:play" }],
-      [{ text: `🎶 ${f("song")}`, callback_data: "cmd:song" }],
-      [{ text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
-      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }],
-      [{ text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
+      [{ text: `🏓 ${f("ping")}`, callback_data: "cmd:ping" }, { text: `🔑 ${f("pair")}`, callback_data: "cmd:pair" }],
+      [{ text: `👥 ${f("tagall")}`, callback_data: "cmd:tagall" }, { text: `▶️ ${f("play")}`, callback_data: "cmd:play" }],
+      [{ text: `🎶 ${f("song")}`, callback_data: "cmd:song" }, { text: `🎵 ${f("music")}`, callback_data: "cmd:music" }],
+      [{ text: `🔵 ${f("channel")}`, url: WA_CHANNEL_LINK }, { text: `💬 ${f("group")}`, url: GROUP_INVITE_LINK }],
     ],
   });
 

@@ -5,9 +5,9 @@ import path from "path";
 import { db } from "../lib/client.js";
 import { Module, getCommands } from "../lib/plugins.js";
 import config from "../config.js";
-import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
+import { proto } from "baileys";
 import { sendPing } from "../lib/pingCore.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard, audioButton } from "../lib/buttonCards.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +17,6 @@ const menuImgPath = path.join(__dirname, "bin", "menu.jpg");
 // home-menu request. The newer optional DP is intentionally not used here.
 const MENU_DIR = path.join(__dirname, "bin", "menu");
 let _lastMenuImg = "";
-const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
 const pickMenuImg = () => {
   try {
     const menuDirImages = fs.readdirSync(MENU_DIR)
@@ -49,13 +48,6 @@ const runtime = (secs) => {
   const s = Math.floor(secs % 60);
   return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
 };
-// never wait minutes on a stuck media upload — give up after `ms` and fall back
-const withTimeout = (promise, ms, label) =>
-  Promise.race([
-    promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} upload timed out (${ms / 1000}s)`)), ms)),
-  ]);
-
 // 𝐁𝐨𝐥𝐝 math letters + digits  (A-Z a-z 0-9)
 const MB = (t) =>
   String(t).replace(/[A-Za-z0-9]/g, (c) => {
@@ -168,6 +160,7 @@ Module({
         quickButton("ᴘʟᴀʏ ▶", "audio"),
         quickButton("ᴠɪᴅᴇᴏ ▷", "musicvideo"),
         quickButton("ᴍᴜsɪᴄ ♬", "audio"),
+        quickButton("🎧 AUDIO", "audio"),
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "🔑 Pair Code", url: pairUrl, merchant_url: pairUrl }) },
       ];
     } else if (firstArg === "browse") {
@@ -211,11 +204,11 @@ Module({
       console.error("❌ Menu image send failed:", e?.message || e);
     }
     await sendText(bodyText);
-    const sentIds = await sendSingleButtonCards({
+    const sentIds = await sendButtonCard({
       conn: message.conn,
       jid: message.from,
       buttons,
-      body: `📋 ${name} — option by option`,
+      body: `📋 ${name} — choose an option`,
       footer: config.brandLine,
       quoted: message.gift,
     });
@@ -296,75 +289,15 @@ Module({
 *RAM Usage:* ${ramUsedMB} MB
 *Uptime:* ${hours}h ${minutes}m ${seconds}s
 `;
-    const imagePath = pickMenuImg();
-    let imageMessage = null;
-    const cached = menuMediaCache.get(imagePath);
-    if (cached && Date.now() - cached.t < 6 * 60 * 60 * 1000) {
-      imageMessage = cached.m;
-    } else {
-      try {
-        const media = await withTimeout(
-          prepareWAMessageMedia(
-            { image: fs.readFileSync(imagePath) },
-            { upload: message.conn.waUploadToServer }
-          ),
-          60_000,
-          "alive image"
-        );
-        imageMessage = media.imageMessage;
-        menuMediaCache.set(imagePath, { m: imageMessage, t: Date.now() });
-      } catch (error) {
-        console.error("[alive] image upload failed; sending the button card without an image:", error?.message || error);
-      }
-    }
-    const P = proto.Message.InteractiveMessage;
-    const bizNodes = [
-      {
-        tag: "biz",
-        attrs: {},
-        content: [
-          {
-            tag: "interactive",
-            attrs: { type: "native_flow", v: "1" },
-            content: [{ tag: "native_flow", attrs: { v: "9", name: "mixed" } }],
-          },
-        ],
-      },
-    ];
-    if (!message.from.endsWith("@g.us")) bizNodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
-    const outgoing = generateWAMessageFromContent(
-      message.from,
-      {
-        viewOnceMessage: {
-          message: {
-            messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
-            interactiveMessage: P.create({
-              body: P.Body.create({ text: ctx + `\n${config.brandLine}` }),
-              footer: P.Footer.create({ text: config.brandLine }),
-              header: P.Header.create({
-                hasMediaAttachment: !!imageMessage,
-                ...(imageMessage ? { imageMessage } : {}),
-              }),
-              nativeFlowMessage: P.NativeFlowMessage.create({
-                buttons: [
-                  {
-                    name: "quick_reply",
-                    buttonParamsJson: JSON.stringify({
-                      display_text: "━[ 𝐀ᴜᴅɪᴏ ]━",
-                      id: `${config.prefix || "."}audio`,
-                    }),
-                  },
-                ],
-              }),
-            }),
-          },
-        },
-      },
-      { quoted: message.gift, userJid: message.conn.user?.id }
-    );
-    await message.conn.relayMessage(message.from, outgoing.message, {
-      messageId: outgoing.key.id,
-      additionalNodes: bizNodes,
+    const imagePath = path.join(__dirname, "bin", "tg_dp.jpg");
+    await sendButtonCard({
+      conn: message.conn,
+      jid: message.from,
+      buttons: [audioButton()],
+      body: ctx.trim(),
+      footer: config.brandLine,
+      quoted: message.gift,
+      image: fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : undefined,
     });
   } catch (err) {
     console.error("❌ Alive command error:", err);

@@ -1,10 +1,10 @@
 import { Module } from "../lib/plugins.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 async function sendButtons(message, data) {
   const text = `*${data.title}*\n\n${data.text}\n\n_${data.footer || ""}_`;
   await message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
-  await sendSingleButtonCards({
+  await sendButtonCard({
     conn: message.conn,
     jid: message.from,
     buttons: data.buttons,
@@ -51,7 +51,7 @@ Module({
       return await sendButtons(message, {
         title: "📊 Group Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Group ID:*\n\`${id}\``,
-        footer: "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*" ,
+        footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" ,
         buttons: [
           {
             name: "cta_copy",
@@ -86,7 +86,7 @@ Module({
       return await sendButtons(message, {
         title: "📢 Channel Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Channel ID:*\n\`${id}\``,
-        footer: "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*",
+        footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
         buttons: [
           {
             name: "cta_copy",

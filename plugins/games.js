@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Module } from "../lib/plugins.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -31,7 +31,7 @@ Module({
     } else {
       await message.conn.sendMessage(message.from, { text: "🎮 *PABITRA GAME ZONE*\nChoose a game below." }, { quoted: message.gift });
     }
-    await sendSingleButtonCards({
+    await sendButtonCard({
       conn: message.conn,
       jid: message.from,
       buttons: [

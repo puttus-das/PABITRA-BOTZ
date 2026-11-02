@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { Module } from "../lib/plugins.js";
 import { db } from "../lib/client.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const menuDir = path.join(__dirname, "bin", "menu");
@@ -60,7 +60,7 @@ async function sendRankCard(message, rows, title) {
     } else {
       await message.conn.sendMessage(message.from, { text }, options);
     }
-    await sendSingleButtonCards({
+    await sendButtonCard({
       conn: message.conn,
       jid: message.from,
       buttons: [
@@ -68,7 +68,7 @@ async function sendRankCard(message, rows, title) {
         { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👤 MY RANK", id: ".rank me" }) },
       ],
       body: "🏆 Leaderboard actions",
-      footer: "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*",
+      footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
       quoted: message.raw || message.gift,
     });
   } catch (error) {

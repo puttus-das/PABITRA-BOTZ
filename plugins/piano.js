@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { Module } from "../lib/plugins.js";
 import config from "../config.js";
-import { sendSingleButtonCards } from "../lib/singleButtonCards.js";
+import { sendButtonCard } from "../lib/buttonCards.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin");
 const prefix = () => config.prefix || ".";
@@ -20,7 +20,7 @@ async function sendButtons(message, text, footer, map, cmd) {
     name: "quick_reply",
     buttonParamsJson: JSON.stringify({ display_text: label, id: `${prefix()}${cmd} ${key}` }),
   }));
-  await sendSingleButtonCards({
+  await sendButtonCard({
     conn: message.conn,
     jid: message.from,
     buttons,
@@ -37,7 +37,7 @@ async function sendBoard(message, { image, title, cards, cmd }) {
   } catch (e) { console.error("[piano] image failed:", e?.message || e); }
   for (const [text, map] of cards) {
     try {
-      await sendButtons(message, text, "*━[ 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ ]━*", map, cmd);
+      await sendButtons(message, text, "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*", map, cmd);
     } catch (e) {
       console.error("[piano] buttons failed:", e?.message || e);
       const list = Object.keys(map).map((k) => `${prefix()}${cmd} ${k}`).join("\n");
