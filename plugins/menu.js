@@ -215,7 +215,6 @@ Module({
 
     // ── Screenshot-style product menu or paginated category buttons ──
     const P = proto.Message.InteractiveMessage;
-    const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
     let bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
     const quickButton = (label, command) => ({
       name: "quick_reply",
@@ -228,10 +227,14 @@ Module({
     let buttons;
     if (!arg) {
       buttons = [
-        quickButton("ping", "owner"),
-        quickButton("alive", "list"),
+        quickButton("ᴍᴇɴᴜ ☰", "menu"),
+        quickButton("ᴏᴡɴᴇʀ ♛", "owner"),
+        quickButton("ᴘɪɴɢ ᯤ", "ping"),
+        quickButton("ᴀʟɪᴠᴇ ✆", "alive"),
+        quickButton("ᴘʟᴀʏ ▶", "audio"),
+        quickButton("ᴠɪᴅᴇᴏ ▷", "musicvideo"),
+        quickButton("ᴍᴜsɪᴄ ♬", "audio"),
         { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: "🔑 Pair Code", url: pairUrl, merchant_url: pairUrl }) },
-        { name: "cta_url", buttonParamsJson: JSON.stringify({ display_text: config.ownerName, url: ownerUrl, merchant_url: ownerUrl }) },
       ];
     } else if (firstArg === "browse") {
       const pageSize = 2;
