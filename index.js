@@ -28,8 +28,7 @@ const app = express();
 // limit body size to 1mb
 app.use(bodyParser.json({ limit: "1mb" }));
 
-// Vercel frontend access. Set WEBSITE_URL in Heroku for a locked-down origin;
-// the wildcard fallback keeps the API usable before the frontend is deployed.
+// Optional CORS for a separately hosted frontend. The bundled Heroku website is same-origin.
 const websiteOrigin = process.env.WEBSITE_URL || "*";
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", websiteOrigin);
@@ -38,6 +37,7 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
+app.use(express.static(path.join(__dirname, "website")));
 
 // Ensure sessions directory exists
 const SESSIONS_DIR = path.join(process.cwd(), "sessions");
@@ -103,7 +103,7 @@ function waitForSessionOpen(sessionId, timeoutMs = 30_000) {
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 /** Health check */
-app.get("/", (_req, res) => {
+app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     status: "Baileys Multi-Session Bot",

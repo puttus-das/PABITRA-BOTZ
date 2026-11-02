@@ -6,7 +6,7 @@ Owner: +919641092392
 
 ## Deploy PABITRA-BOT
 
-The backend is a long-running Node.js/Docker service. The same source can run on Heroku, Render, Railway, Koyeb, or an Oracle Cloud VM. Click a badge for the provider's deployment flow or setup guide.
+The app is a long-running Node.js service. On Heroku, the same app serves the website, pairing API, and media from one URL. The source can also run on Render, Railway, Koyeb, or an Oracle Cloud VM.
 
 [![Deploy to Heroku](https://img.shields.io/badge/Deploy-Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white)](https://heroku.com/deploy?template=https://github.com/puttus-das/PABITRA-BOTZ)
 [![Deploy to Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com/deploy?repo=https://github.com/puttus-das/PABITRA-BOTZ)
@@ -20,7 +20,7 @@ The backend is a long-running Node.js/Docker service. The same source can run on
 1. Choose one backend host and deploy the repository root. Heroku uses `Procfile`; Render's persistent-disk setup is [`render.yaml`](render.yaml), while the sleep/ephemeral free preview is [`render-free.yaml`](render-free.yaml); Railway uses [`railway.json`](railway.json); Koyeb and Oracle Cloud can build the included [`Dockerfile`](Dockerfile).
 2. Configure the environment variables below in the provider dashboard. Do not commit tokens, pairing sessions, or database secrets.
 3. For persistent WhatsApp logins, mount durable storage at `/data` and set `AUTH_DIR=/data/sessions` and `DATA_DIR=/data/data`. On Railway, create and mount a volume at `/data`. On Oracle Cloud, use a persistent host directory/volume. Render's included blueprint uses a paid persistent disk.
-4. Deploy the frontend separately to Vercel using the website deployment button below. Set `website/config.js` to the deployed backend URL and set the backend's `WEBSITE_URL` to the Vercel site origin.
+4. The website is included under `website/` and is served by the app at `/`. Its pairing form calls `/pair/:number` on that same Heroku origin; no separate Vercel deployment or API URL is required.
 
 ### Platform notes
 
@@ -29,18 +29,15 @@ The backend is a long-running Node.js/Docker service. The same source can run on
 - **Railway:** deploy with the included Dockerfile and `railway.json`, then add a Railway Volume mounted at `/data`. The default free credit may not cover a continuously running service.
 - **Koyeb:** create a Docker web service from this repository and use the included Dockerfile. Configure `AUTH_DIR` and `DATA_DIR` to a durable volume if available on your plan. The free instance scales to zero, so it can disconnect the bot.
 - **Oracle Cloud:** create an Always Free VM where capacity is available, install Docker, clone this repository, then run the container with a host directory mounted at `/data`. Keep the VM patched and protect SSH credentials. Free VM availability and idle-reclamation policies apply.
-- **Vercel:** use it for the static website only. The WhatsApp bot requires a persistent, long-running backend process and should not run as a Vercel serverless function.
+- **Vercel:** optional for a separate static frontend. The combined Heroku website and pairing page are served by the long-running app process.
 
 ### Environment variables
 
-Set at least `BOT_TOKEN_TELEGRAM`, `TG_GROUP_ID`, and `WEBSITE_URL` for Telegram integration and website CORS. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. Transient reconnects retry indefinitely by default; set `RECONNECT_LIMIT` only if you specifically want a finite cap. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
+Set at least `BOT_TOKEN_TELEGRAM` and `TG_GROUP_ID` for Telegram integration. `WEBSITE_URL` is optional and only needed when hosting the frontend on a separate origin; omit it for the same-origin Heroku website. `BOT_PREFIX` defaults to `.`, `PAIR_CODE` defaults to `POBIPAUL` (shown as `POBI-PAUL`), `AUTH_DIR` defaults to `./sessions`, and `DATA_DIR` defaults to `./data`. Transient reconnects retry indefinitely by default; set `RECONNECT_LIMIT` only if you specifically want a finite cap. `PORT` is supplied by most platforms. Set `OFFTELEBOT=true` if you do not want to initialize the Telegram bot.
 
-## Deploy the website to Vercel
+## Website on Heroku
 
-[![Open live website](https://img.shields.io/badge/Open-Live%20Website-53e4ff?style=for-the-badge&logo=vercel&logoColor=white)](https://pabitra-botzdas.vercel.app/)
-[![Deploy website to Vercel](https://img.shields.io/badge/Deploy-Website%20to%20Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fputtus-das%2FPABITRA-BOTZ&root-directory=website&project-name=pabitra-botz-website)
-
-Select `website/` as the Vercel root directory. Update `website/config.js` with your live backend URL. The website's pairing form calls the backend's `/pair/:number` endpoint; a Vercel deploy alone does not host the bot backend.
+Deploy the repository root to Heroku. The app serves `website/index.html`, its CSS/JavaScript, images, and MP4 videos automatically, while the pairing form calls the same app's `/pair/:number` endpoint. The homepage is `/`; the JSON status endpoint is `/health`.
 
 ## Pair WhatsApp
 
@@ -64,7 +61,6 @@ docker run -d --name pabitra-bot --restart unless-stopped \
   -e DATA_DIR=/data/data \
   -e BOT_TOKEN_TELEGRAM=your_token \
   -e TG_GROUP_ID=your_group_id \
-  -e WEBSITE_URL=https://your-site.vercel.app \
   -v "$PWD/runtime:/data" \
   pabitra-bot
 ```
@@ -72,10 +68,10 @@ docker run -d --name pabitra-bot --restart unless-stopped \
 ## Project layout
 
 - The repository root is the WhatsApp/Telegram Node.js backend.
-- `website/` is the static Vercel frontend.
+- `website/` is the static site served by Express from the same app as the bot and pairing API.
 - `render.yaml`, `render-free.yaml`, and `railway.json` provide deployment configuration for those platforms.
-- `package-lock.json` pins dependencies for `npm ci`; `.dockerignore` removes the unused website and documentation from backend image builds.
+- `package-lock.json` pins dependencies for `npm ci`; `.dockerignore` removes Git history, documentation, and local runtime data while keeping the website assets.
 - `Dockerfile` is the common container entry point for Docker, Koyeb, Railway, Render, and Oracle Cloud.
-- `Procfile` and `app.json` provide Heroku deployment metadata.
+- `Procfile` and `app.json` provide Heroku deployment metadata; the site and bot run together in one web process.
 
 © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ

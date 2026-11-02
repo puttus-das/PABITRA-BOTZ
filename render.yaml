@@ -5,7 +5,7 @@ services:
     plan: starter
     region: singapore
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /
+    healthCheckPath: /health
     disk:
       name: pabitra-data
       mountPath: /data

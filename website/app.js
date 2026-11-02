@@ -1,10 +1,5 @@
-const DEFAULT_API_URL = "https://niloyy-4b8c614a0da0.herokuapp.com";
 const configuredApiUrl = String(window.PABITRA_API_URL || "").trim();
-const API_URL = String(
-  configuredApiUrl && !configuredApiUrl.includes("YOUR-HEROKU-APP")
-    ? configuredApiUrl
-    : DEFAULT_API_URL
-).replace(/\/$/, "");
+const API_URL = String(configuredApiUrl || window.location.origin).replace(/\/$/, "");
 const $ = (selector) => document.querySelector(selector);
 const sessionCount = $("#sessionCount");
 const pluginCount = $("#pluginCount");
@@ -13,7 +8,7 @@ const apiState = $("#apiState");
 async function refreshStatus() {
   try {
     const [healthResponse, sessionsResponse, pluginsResponse] = await Promise.all([
-      fetch(`${API_URL}/`),
+      fetch(`${API_URL}/health`),
       fetch(`${API_URL}/sessions`),
       fetch(`${API_URL}/plugins`),
     ]);

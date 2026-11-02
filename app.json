@@ -20,8 +20,8 @@
       "required": true
     },
     "WEBSITE_URL": {
-      "description": "Vercel website origin, for example https://pabitra-botz.vercel.app",
-      "required": true
+      "description": "Optional origin for a separately hosted frontend; omit it when using the bundled same-origin Heroku website",
+      "required": false
     }
   },
   "formation": {
