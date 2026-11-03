@@ -26,7 +26,7 @@ let _lastMenuImg = "";
 const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
 const pickMenuImg = () => {
   try {
-    const all = fs.readdirSync(MENU_DIR).filter((x) => /\.(jpe?g|png)$/i.test(x));
+    const all = fs.readdirSync(MENU_DIR).filter((x) => /\.(jpe?g|png|webp)$/i.test(x));
     const pool = all.length > 1 ? all.filter((x) => x !== _lastMenuImg) : all;
     if (pool.length) {
       _lastMenuImg = pool[Math.floor(Math.random() * pool.length)];

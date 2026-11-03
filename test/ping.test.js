@@ -19,6 +19,8 @@ test("ping sends one card with one audio button and no separate text message", a
   assert.equal(relayed.length, 1);
   const card = relayed[0].payload.viewOnceMessage.message.interactiveMessage;
   assert.match(card.body.text, /^\*━\( 𝐏ᴀʙɪᴛʀᴀ  \d+  𝐁ᴏᴛ⎯꯭̽💜 \)━\*$/);
+  assert.equal(card.header.hasMediaAttachment, false);
+  assert.equal(card.header.imageMessage, null);
   assert.equal(card.nativeFlowMessage.buttons.length, 1);
   assert.equal(JSON.parse(card.nativeFlowMessage.buttons[0].buttonParamsJson).display_text, "🎧 Audio");
 });
