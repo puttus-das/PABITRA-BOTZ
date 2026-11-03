@@ -20,60 +20,53 @@ Module({
   package: "general",
   description: "PABITRA BOT premium image menu"
 })(async (message) => {
-
   try {
     const conn = message.conn;
     const jid = message.from;
     const prefix = config.prefix || ".";
 
-    // RANDOM MENU IMAGE
-    const imagePath = getRandomPhoto();
+    let imagePath = getRandomPhoto();
 
     if (!imagePath || !fs.existsSync(imagePath)) {
-      throw new Error("Menu image not found: " + imagePath);
+      imagePath = new URL(
+        "./bin/menu.jpg",
+        import.meta.url
+      ).pathname;
+    }
+
+    if (!fs.existsSync(imagePath)) {
+      throw new Error("Menu image not found!");
     }
 
     const imageBuffer = fs.readFileSync(imagePath);
 
-    // UPLOAD IMAGE
     const media = await prepareWAMessageMedia(
-      {
-        image: imageBuffer
-      },
-      {
-        upload: conn.waUploadToServer
-      }
+      { image: imageBuffer },
+      { upload: conn.waUploadToServer }
     );
 
-    // MENU CAPTION
+    if (!media?.imageMessage) {
+      throw new Error("Image upload failed!");
+    }
+
     const caption = `
 ╭━━━〔 💜 ${BOT_NAME} 〕━━━╮
 
-✨ 𝐖ᴇʟᴄᴏᴍᴇ 𝐓ᴏ 𝐏ᴀʙɪᴛʀᴀ
+  ✨ 𝐖ᴇʟᴄᴏᴍᴇ 𝐓ᴏ 𝐏ᴀʙɪᴛʀᴀ
 
-👤 𝐔ꜱᴇʀ : ${message.pushName || "User"}
-👑 𝐎ᴡɴᴇʀ : ${OWNER}
-📞 𝐂ᴏɴᴛᴀᴄᴛ : ${CONTACT}
+  👤 𝐔ꜱᴇʀ : ${message.pushName || "User"}
+  👑 𝐎ᴡɴᴇʀ : ${OWNER}
+  📞 𝐂ᴏɴᴛᴀᴄᴛ : ${CONTACT}
 
-╰━━━━━━━━━━━━━━━━━━╯
-
-╭━━〔 ✨ 𝐁ᴏᴛ 𝐈ɴғᴏ ✨ 〕━━╮
-┃
-┃ 🚀 𝐀ᴜᴛᴏᴍᴀᴛᴇ 𝐘ᴏᴜʀ 𝐖ʜᴀᴛꜱᴀᴘᴘ
-┃ ⚡ 𝐅ᴀꜱᴛ & 𝐒ᴍᴀʀᴛ 𝐑ᴇꜱᴘᴏɴꜱᴇ
-┃ 💎 𝐏ʀᴇᴍɪᴜᴍ 𝐂ᴏᴍᴍᴀɴᴅꜱ
-┃
-╰━━━━━━━━━━━━━━━━━━╯
-
-❤️ 𝐂ʜᴏᴏꜱᴇ 𝐀 𝐁ᴜᴛᴛᴏɴ 𝐁ᴇʟᴏᴡ
+     ❤️ 𝐂ʜᴏᴏsᴇ 𝐀 𝐁ᴜᴛᴛᴏɴ 𝐁ᴇʟᴏᴡ
 
 > © 𝐒𝐈𝐋𝐈𝐆𝐔𝐑𝐈-𝐁𝐎𝐘
-𝐄𝐃𝐈𝐓𝐙 - 𝐀𝐏𝐔𝐑𝐁𝐎-𝐃𝐀𝐒
+> 𝐄𝐃𝐈𝐓𝐙 - 𝐀𝐏𝐔𝐑𝐁𝐎-𝐃𝐀𝐒
 
-© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━
+*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*
 `;
 
-    // LEFT + RIGHT BUTTONS
+    // LEFT - MENU | RIGHT - PING
     const buttons = [
       {
         name: "quick_reply",
@@ -94,7 +87,6 @@ Module({
     const I = proto.Message.InteractiveMessage;
 
     const interactiveMessage = I.create({
-
       body: I.Body.create({
         text: caption
       }),
@@ -112,10 +104,8 @@ Module({
       nativeFlowMessage: I.NativeFlowMessage.create({
         buttons
       })
-
     });
 
-    // GENERATE MENU MESSAGE
     const generated = generateWAMessageFromContent(
       jid,
       {
@@ -134,7 +124,6 @@ Module({
       }
     );
 
-    // SEND MENU
     await conn.relayMessage(
       jid,
       generated.message,
@@ -143,51 +132,13 @@ Module({
       }
     );
 
-    // PREMIUM PRODUCT CARD
-    const businessJid = conn.user.id.replace(
-      /:\d+@/,
-      "@"
-    );
-
-    await conn.sendMessage(jid, {
-
-      product: {
-        productImage: imageBuffer,
-
-        productId: "PABITRA-BOT-PREMIUM",
-
-        title: "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ Premium",
-
-        description:
-          "Premium WhatsApp Bot | Smart Commands | PABITRA-BOT",
-
-        currencyCode: "USD",
-
-        priceAmount1000: "999999000",
-
-        retailerId: "PABITRA-BOT",
-
-        productImageCount: 1
-      },
-
-      businessOwnerJid: businessJid,
-
-      caption: "💜 Welcome to PABITRA-BOT Premium",
-
-      title: BOT_NAME,
-
-      footer: "© SILIGURI-BOY"
-
-    });
+    console.log("[PABITRA MENU] Sent successfully!");
 
   } catch (error) {
-
     console.error("[PABITRA MENU ERROR]", error);
 
     await message.conn.sendMessage(message.from, {
       text: `❌ MENU ERROR\n\n${error.message}`
     });
-
   }
-
 });
