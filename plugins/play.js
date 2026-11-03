@@ -30,6 +30,17 @@ const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124 Mobile
 const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
 
 const clean = (value) => String(value || "").trim();
+const botSongImagePath = path.join(__dirname, "bin", "tg_dp.jpg");
+let botSongImage = null;
+
+export async function sendBotSongImage(message) {
+  try {
+    if (!botSongImage) botSongImage = fs.readFileSync(botSongImagePath);
+    await message.conn.sendMessage(message.from, { image: botSongImage });
+  } catch (error) {
+    console.warn("[SONG:BOT-DP] Could not send bot image:", error?.message || error);
+  }
+}
 
 // ========================================
 // THUMBNAIL SYSTEM
@@ -226,6 +237,7 @@ async function sendRabbitSong(
   } = {}
 ) {
   const song = await getRabbitSong(query, route);
+  await sendBotSongImage(message);
 
   const audioMessage = {
     audio: { url: song.audioUrl },
@@ -559,6 +571,7 @@ async function sendSong(
 ) {
   const video = await searchVideo(query);
   const buffer = await downloadEliteAudio(video.url);
+  await sendBotSongImage(message);
 
   const audioMessage = {
     audio: buffer,

@@ -16,6 +16,7 @@ import {
   prepareWAMessageMedia,
 } from "baileys";
 import config from "../config.js";
+import { sendBotSongImage } from "./play.js";
 
 const pipeline = promisify(stream.pipeline);
 const __filename = fileURLToPath(import.meta.url);
@@ -167,6 +168,7 @@ async function handleSongDownload(videoUrl, meta, message) {
 
     const audioBuffer = fs.readFileSync(tmpFile);
 
+    await sendBotSongImage(message);
     await sock.sendMessage(from, {
       audio: audioBuffer,
       mimetype: "audio/mpeg",
