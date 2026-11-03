@@ -3,7 +3,6 @@ import {
   searchEliteVideo,
   downloadEliteAudio,
   searchRabbitSong,
-  sendBotSongImage,
 } from "./play.js";
 
 const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
@@ -48,7 +47,6 @@ Module({
     const mentionMessage = await message.reply(mentionText, {
       mentions: mentionJid ? [mentionJid] : [],
     });
-    await sendBotSongImage(message);
 
     await message.conn.sendMessage(
       message.from,
