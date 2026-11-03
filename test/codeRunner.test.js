@@ -33,10 +33,10 @@ test("run result exposes compiler and runtime errors and caps output", () => {
   assert.match(large, /output truncated/);
 });
 
-test("run command is owner-only and CRM replay command is removed", async () => {
+test("run command is owner-only and CRM replay command is registered", async () => {
   const run = commands.get("run");
   assert.ok(run);
-  assert.equal(commands.has("crm"), false);
+  assert.equal(commands.has("crm"), true);
   assert.equal(commands.has("inspect"), true);
   const replies = [];
   await run.exec({

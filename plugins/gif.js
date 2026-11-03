@@ -150,6 +150,8 @@ Module({ on: "text" })(async (message) => {
 // Method 2: Command — .hug, .kiss, .pat etc.
 // ─────────────────────────────────────────────
 Object.keys(reactions).forEach((reactionName) => {
+  // .run is reserved for the owner-only sandbox code runner.
+  if (reactionName === "run") return;
   Module({
     command: reactionName,
     package: "reactions",
