@@ -25,6 +25,7 @@ Module({
     const jid = message.from;
     const prefix = config.prefix || ".";
 
+    // RANDOM MENU IMAGE
     let imagePath = getRandomPhoto();
 
     if (!imagePath || !fs.existsSync(imagePath)) {
@@ -40,6 +41,7 @@ Module({
 
     const imageBuffer = fs.readFileSync(imagePath);
 
+    // IMAGE UPLOAD
     const media = await prepareWAMessageMedia(
       { image: imageBuffer },
       { upload: conn.waUploadToServer }
@@ -49,6 +51,7 @@ Module({
       throw new Error("Image upload failed!");
     }
 
+    // MENU CAPTION
     const caption = `
 ╭━━━〔 💜 ${BOT_NAME} 〕━━━╮
 
@@ -66,7 +69,7 @@ Module({
 *© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*
 `;
 
-    // LEFT - MENU | RIGHT - PING
+    // THREE NATIVE FLOW BUTTONS
     const buttons = [
       {
         name: "quick_reply",
@@ -80,6 +83,13 @@ Module({
         buttonParamsJson: JSON.stringify({
           display_text: "ᴘɪɴɢ",
           id: `${prefix}ping`
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "ᴏᴡɴᴇʀ",
+          id: `${prefix}owner`
         })
       }
     ];
@@ -106,6 +116,7 @@ Module({
       })
     });
 
+    // GENERATE MESSAGE
     const generated = generateWAMessageFromContent(
       jid,
       {
@@ -124,6 +135,7 @@ Module({
       }
     );
 
+    // SEND MENU
     await conn.relayMessage(
       jid,
       generated.message,
