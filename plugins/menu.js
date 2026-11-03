@@ -8,7 +8,7 @@ import config from "../config.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const IMAGE = path.join(__dirname, "bin", "menu.jpg");
+const IMAGE = path.join(__dirname, "bin", "pabitra.jpg");
 
 const BOT_NAME = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
 const OWNER = "APURBO-DAS";
