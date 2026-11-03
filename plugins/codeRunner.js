@@ -1,134 +1,411 @@
+// plugins/codeRunner.js
+// PABITRA-BOT — Code Runner + WhatsApp file runner + CRM replay
+// Code files run on Wandbox sandbox, NOT inside the bot process.
+
 import { Module } from "../lib/plugins.js";
 
-const API_BASE = (process.env.CODE_RUNNER_API_BASE || "https://wandbox.org/api").replace(/\/+$/, "");
-const API_TIMEOUT_MS = 25_000;
-const MAX_CODE_CHARS = 12_000;
-const MAX_OUTPUT_CHARS = 3_200;
-const LANGUAGE_ALIASES = new Map([
-  ["py", "python"], ["python3", "python"],
-  ["js", "javascript"], ["node", "javascript"], ["nodejs", "javascript"],
-  ["ts", "typescript"],
-  ["cpp", "c++"], ["cxx", "c++"], ["c plus plus", "c++"],
-  ["golang", "go"], ["rb", "ruby"], ["sh", "bash"], ["shell", "bash"],
-]);
+const API_BASE = "https://wandbox.org/api";
+const API_TIMEOUT_MS = 25000;
+const MAX_CODE_CHARS = 12000;
+const MAX_FILE_BYTES = 64000;
+const MAX_OUTPUT_CHARS = 3200;
+const OWNER_NUMBER = process.env.OWNER_NUMBER || "919641092392";
 
-let compilerCache = { expiresAt: 0, compilers: [] };
+const LANGUAGES = {
+  python: {
+    name: "Python",
+    extensions: [".py"],
+    aliases: ["py"],
+  },
+  javascript: {
+    name: "JavaScript",
+    extensions: [".js", ".mjs", ".cjs"],
+    aliases: ["js", "node"],
+  },
+  cpp: {
+    name: "C++",
+    extensions: [".cpp", ".cc", ".cxx"],
+    aliases: ["c++", "cxx"],
+  },
+  c: {
+    name: "C",
+    extensions: [".c"],
+    aliases: [],
+  },
+  go: {
+    name: "Go",
+    extensions: [".go"],
+    aliases: ["golang"],
+  },
+  ruby: {
+    name: "Ruby",
+    extensions: [".rb"],
+    aliases: ["rb"],
+  },
+};
 
-function normalizeLanguage(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  return LANGUAGE_ALIASES.get(raw) || raw;
+const cleanNumber = (value) =>
+  String(value || "").replace(/\D/g, "");
+
+function isOwner(message) {
+  if (message?.isFromMe || message?.isfromMe) return true;
+
+  const sender = cleanNumber(message?.sender);
+  const owner = cleanNumber(OWNER_NUMBER);
+
+  return Boolean(sender && owner && sender === owner);
+}
+
+function getLanguage(input) {
+  const value = String(input || "").toLowerCase().trim();
+
+  for (const [key, config] of Object.entries(LANGUAGES)) {
+    if (key === value || config.aliases.includes(value)) {
+      return key;
+    }
+  }
+
+  return null;
 }
 
 export function parseRunInput(input) {
-  const match = String(input || "").match(/^([^\s]+)(?:\s+|\r?\n)([\s\S]+)$/);
-  if (!match) return null;
-  let code = match[2];
-  let stdin = "";
-  const marker = /\r?\n--stdin--\r?\n/;
-  const split = code.match(marker);
-  if (split && split.index !== undefined) {
-    stdin = code.slice(split.index + split[0].length);
-    code = code.slice(0, split.index);
+  const raw = String(input || "").trim();
+  const firstSpace = raw.search(/\s/);
+
+  if (!raw || firstSpace === -1) return null;
+
+  const languageText = raw.slice(0, firstSpace).toLowerCase();
+  const code = raw.slice(firstSpace + 1).trim();
+
+  const language = getLanguage(languageText);
+
+  if (!language || !code) return null;
+  if (code.length > MAX_CODE_CHARS) return null;
+
+  const marker = "\n--stdin--\n";
+  const markerIndex = code.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return { language, code, stdin: "" };
   }
-  return { language: match[1], code: code.trimEnd(), stdin };
+
+  return {
+    language,
+    code: code.slice(0, markerIndex).trim(),
+    stdin: code.slice(markerIndex + marker.length),
+  };
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "User-Agent": "PABITRA-BOTZ-CodeRunner/1.0",
-      Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...options.headers,
-    },
-    signal: AbortSignal.timeout(API_TIMEOUT_MS),
-  });
-  const text = await response.text();
-  let data;
-  try { data = text ? JSON.parse(text) : {}; }
-  catch { throw new Error(`Code service returned invalid data (HTTP ${response.status})`); }
-  if (!response.ok) throw new Error(data?.message || data?.error || `Code service HTTP ${response.status}`);
-  return data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
+let compilerCache = null;
+let compilerCacheTime = 0;
+
 async function getCompilers() {
-  if (compilerCache.expiresAt > Date.now() && compilerCache.compilers.length) return compilerCache.compilers;
+  if (compilerCache && Date.now() - compilerCacheTime < 10 * 60 * 1000) {
+    return compilerCache;
+  }
+
   const data = await fetchJson(`${API_BASE}/list.json`);
-  if (!Array.isArray(data) || !data.length) throw new Error("Code service returned no available languages");
-  compilerCache = { expiresAt: Date.now() + 10 * 60_000, compilers: data };
+
+  if (!Array.isArray(data)) {
+    throw new Error("Compiler list পাওয়া যায়নি।");
+  }
+
+  compilerCache = data;
+  compilerCacheTime = Date.now();
+
   return data;
 }
 
 function pickCompiler(compilers, language) {
-  const query = normalizeLanguage(language);
-  const exact = compilers.find((compiler) => String(compiler.name || "").toLowerCase() === query);
-  if (exact) return exact;
+  const wanted = LANGUAGES[language]?.name?.toLowerCase();
 
-  const candidates = compilers.filter((compiler) => normalizeLanguage(compiler.language) === query);
-  if (!candidates.length) return null;
-  return candidates.find((compiler) => compiler.version && !/head|experimental/i.test(`${compiler.name} ${compiler.version}`)) || candidates[0];
+  const matches = compilers.filter((compiler) => {
+    return String(compiler.language || "").toLowerCase() === wanted;
+  });
+
+  if (!matches.length) {
+    throw new Error(`${LANGUAGES[language]?.name || language} compiler পাওয়া যায়নি।`);
+  }
+
+  return matches[0];
 }
 
-export function formatRunResult(result, compilerName = "") {
-  const compile = String(result?.compiler_error || result?.compiler_output || "").trim();
-  const stdout = String(result?.program_output || "").trimEnd();
-  const stderr = String(result?.program_error || "").trim();
-  const status = String(result?.status ?? "");
-  const sections = [];
-  if (compile) sections.push(`Compile output:\n${compile}`);
-  if (stdout) sections.push(`Output:\n${stdout}`);
-  if (stderr) sections.push(`Error output:\n${stderr}`);
-  if (!sections.length) sections.push(status === "0" ? "Program finished with no output." : `Program finished with status ${status || "unknown"}.`);
-  const exit = result?.signal ? `signal ${result.signal}` : result?.status !== undefined ? `status ${result.status}` : "status unknown";
-  const header = `${status === "0" ? "✅" : "⚠️"} ${compilerName || result?.compiler || "Code"} finished (${exit})`;
-  let text = `${header}\n\n${sections.join("\n\n")}`;
-  if (text.length > MAX_OUTPUT_CHARS) text = `${text.slice(0, MAX_OUTPUT_CHARS)}\n\n…output truncated…`;
-  return text;
+function trimOutput(value) {
+  const text = String(value || "").trim();
+
+  if (!text) return "(কোনো output নেই)";
+  if (text.length <= MAX_OUTPUT_CHARS) return text;
+
+  return text.slice(0, MAX_OUTPUT_CHARS) + "\n... output কেটে দেওয়া হয়েছে।";
 }
 
-function isOwner(message) {
-  if (message?.isFromMe || message?.isfromMe) return true;
-  const owner = String(process.env.OWNER_NUMBER || "919641092392").replace(/\D/g, "");
-  const sender = String(message?.sender || "").split("@")[0].replace(/\D/g, "");
-  return !!owner && sender === owner;
+async function executeCode({ language, code, stdin = "" }) {
+  if (!LANGUAGES[language]) {
+    throw new Error("এই language support করে না।");
+  }
+
+  if (!code || code.length > MAX_CODE_CHARS) {
+    throw new Error("Code খালি অথবা limit-এর বেশি।");
+  }
+
+  const compilers = await getCompilers();
+  const compiler = pickCompiler(compilers, language);
+
+  const result = await fetchJson(`${API_BASE}/compile.json`, {
+    method: "POST",
+    body: JSON.stringify({
+      compiler: compiler.name,
+      code,
+      stdin,
+      options: "",
+      "compiler-option-raw": "",
+      "runtime-option-raw": "",
+    }),
+  });
+
+  const output = [
+    result.program_output,
+    result.program_error,
+    result.compiler_output,
+    result.compiler_message,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    compiler: compiler.name,
+    status: result.status || "",
+    output: trimOutput(output),
+    signal: result.signal || "",
+  };
+}
+
+function getExtension(fileName) {
+  const name = String(fileName || "").toLowerCase();
+  const index = name.lastIndexOf(".");
+
+  return index >= 0 ? name.slice(index) : "";
+}
+
+function languageFromFile(fileName) {
+  const extension = getExtension(fileName);
+
+  for (const [language, config] of Object.entries(LANGUAGES)) {
+    if (config.extensions.includes(extension)) return language;
+  }
+
+  return null;
+}
+
+async function downloadQuotedFile(message) {
+  const quoted = message?.quoted;
+
+  if (!quoted || typeof quoted.download !== "function") {
+    throw new Error("কোনো document file-এর reply দাও।");
+  }
+
+  const buffer = await quoted.download();
+
+  if (!buffer) {
+    throw new Error("ফাইল download করা যায়নি।");
+  }
+
+  const data = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+
+  if (!data.length || data.length > MAX_FILE_BYTES) {
+    throw new Error("ফাইল খালি অথবা 64 KB-এর বেশি।");
+  }
+
+  return data;
+}
+
+// Only accepts the JSON format created by the PABITRA .crm plugin.
+export function parseCrmReplayBuffer(buffer, currentChat) {
+  if (!Buffer.isBuffer(buffer) || buffer.length > MAX_FILE_BYTES) {
+    throw new Error("CRM file invalid অথবা খুব বড়।");
+  }
+
+  let data;
+
+  try {
+    data = JSON.parse(buffer.toString("utf8"));
+  } catch {
+    throw new Error("CRM JSON file পড়া যায়নি।");
+  }
+
+  if (
+    data?.format !== "PABITRA_CRM_REPLAY" ||
+    data?.version !== 1
+  ) {
+    throw new Error("এটি PABITRA CRM replay file নয়।");
+  }
+
+  if (data?.source?.chat !== currentChat) {
+    throw new Error("এই CRM file অন্য chat-এর।");
+  }
+
+  if (
+    data?.message?.type !== "text" ||
+    typeof data?.message?.text !== "string"
+  ) {
+    throw new Error("এই CRM file-এ supported text message নেই।");
+  }
+
+  const text = data.message.text.trim();
+
+  if (!text || text.length > 4000) {
+    throw new Error("CRM message খালি অথবা খুব বড়।");
+  }
+
+  return { text };
+}
+
+async function tryCrmReplay(message) {
+  const quoted = message?.quoted;
+
+  if (quoted?.type !== "documentMessage") return false;
+
+  const fileName = quoted?.msg?.fileName || "";
+
+  if (fileName !== "PABITRA-CRM-REPLAY.json") return false;
+
+  const buffer = await downloadQuotedFile(message);
+  const replay = parseCrmReplayBuffer(buffer, message.from);
+
+  await message.conn.sendMessage(message.from, {
+    text: replay.text,
+  });
+
+  await message.send("✅ CRM text replay করা হয়েছে।");
+  return true;
+}
+
+async function tryRunCodeFile(message) {
+  const quoted = message?.quoted;
+
+  if (quoted?.type !== "documentMessage") return false;
+
+  const fileName = quoted?.msg?.fileName || "";
+  const language = languageFromFile(fileName);
+
+  if (!language) return false;
+
+  const buffer = await downloadQuotedFile(message);
+  const code = buffer.toString("utf8");
+
+  if (!code.trim()) {
+    throw new Error("Code file খালি।");
+  }
+
+  if (code.length > MAX_CODE_CHARS) {
+    throw new Error("Code file 12,000 characters-এর বেশি।");
+  }
+
+  await message.send(`⏳ *${fileName}* রান হচ্ছে...`);
+
+  const result = await executeCode({
+    language,
+    code,
+  });
+
+  await message.send(
+    `╭─「 *PABITRA RUNNER* 」\n` +
+    `│ File: ${fileName}\n` +
+    `│ Language: ${LANGUAGES[language].name}\n` +
+    `│ Compiler: ${result.compiler}\n` +
+    `╰──────────────\n\n` +
+    `*OUTPUT:*\n\`\`\`\n${result.output}\n\`\`\``
+  );
+
+  return true;
 }
 
 Module({
   command: "run",
   aliases: ["code", "coderun", "execute"],
   package: "tools",
-  description: "Run code in an isolated sandbox (owner only)",
-  usage: ".run <language> <code> | .languages",
+  description: "Run code or supported WhatsApp code files (owner only)",
+  usage: ".run python print('Hello') | Reply to a code file with .run",
 })(async (message, match) => {
-  if (!isOwner(message)) return message.send("_This code runner is owner-only._");
-  const parsed = parseRunInput(match);
-  if (!parsed || !parsed.code.trim()) {
-    return message.send(`Usage: ${process.env.BOT_PREFIX || "."}run <language> <code>\nExample: .run python print(1 + 1)\nUse .languages to list supported languages.\nFor stdin, add a line containing --stdin-- after your code.`);
-  }
-  if (parsed.code.length > MAX_CODE_CHARS || parsed.stdin.length > 2_000) {
-    return message.send(`Code/input too long. Limits: ${MAX_CODE_CHARS} code characters and 2000 stdin characters.`);
-  }
-
   try {
-    const compilers = await getCompilers();
-    const compiler = pickCompiler(compilers, parsed.language);
-    if (!compiler) return message.send(`Unsupported language: ${parsed.language}\nUse .languages to see available languages.`);
-    const result = await fetchJson(`${API_BASE}/compile.json`, {
-      method: "POST",
-      body: JSON.stringify({
-        compiler: compiler.name,
-        code: parsed.code,
-        stdin: parsed.stdin,
-        options: "",
-        "compiler-option-raw": "",
-        "runtime-option-raw": "",
-      }),
-    });
-    await message.send(formatRunResult(result, `${compiler.language || parsed.language} (${compiler.name})`));
+    if (!isOwner(message)) {
+      return message.send("⛔ এই command শুধু owner ব্যবহার করতে পারবে।");
+    }
+
+    // 1. CRM replay file
+    if (message?.quoted?.type === "documentMessage") {
+      const fileName = message.quoted?.msg?.fileName || "";
+
+      if (fileName === "PABITRA-CRM-REPLAY.json") {
+        await tryCrmReplay(message);
+        return;
+      }
+
+      // 2. Supported code file
+      if (languageFromFile(fileName)) {
+        await tryRunCodeFile(message);
+        return;
+      }
+    }
+
+    // 3. Normal inline code
+    const parsed = parseRunInput(match);
+
+    if (!parsed) {
+      return message.send(
+        `*PABITRA RUNNER*\n\n` +
+        `*Text code:*\n` +
+        `.run python print("Hello")\n\n` +
+        `*File run:*\n` +
+        `WhatsApp-এ .py / .js / .cpp / .c / .go / .rb file-এ reply দিয়ে .run লেখো।\n\n` +
+        `*CRM replay:*\n` +
+        `PABITRA-CRM-REPLAY.json file-এ reply দিয়ে .run লেখো।\n\n` +
+        `*Languages:*\n` +
+        `.languages`
+      );
+    }
+
+    await message.send("⏳ Code রান হচ্ছে...");
+
+    const result = await executeCode(parsed);
+
+    return message.send(
+      `╭─「 *PABITRA RUNNER* 」\n` +
+      `│ Language: ${LANGUAGES[parsed.language].name}\n` +
+      `│ Compiler: ${result.compiler}\n` +
+      `╰──────────────\n\n` +
+      `*OUTPUT:*\n\`\`\`\n${result.output}\n\`\`\``
+    );
   } catch (error) {
-    console.error("[CODE-RUNNER]", error?.message || error);
-    await message.send(`Code run failed: ${error?.message || "the sandbox service is unavailable"}`);
+    console.error("[PABITRA RUNNER]", error);
+
+    return message.send(
+      `❌ *Run failed:*\n${String(error?.message || error).slice(0, 700)}`
+    );
   }
 });
 
@@ -136,34 +413,20 @@ Module({
   command: "languages",
   aliases: ["langs"],
   package: "tools",
-  description: "List languages available in the code sandbox (owner only)",
-})(async (message, match) => {
-  if (!isOwner(message)) return message.send("_This command is owner-only._");
-  try {
-    const compilers = await getCompilers();
-    const seen = new Set();
-    const entries = [];
-    for (const compiler of compilers) {
-      const language = String(compiler.language || compiler.name || "").trim();
-      const key = normalizeLanguage(language);
-      if (!key || seen.has(key)) continue;
-      const preferred = pickCompiler(compilers, key) || compiler;
-      seen.add(key);
-      entries.push(`• ${language}: ${preferred.name}`);
-    }
-    const text = `Sandbox languages (${entries.length}):\n${entries.join("\n")}\n\nExample: .run python print("Hello")`;
-    const chunks = [];
-    let chunk = "";
-    for (const line of text.split("\n")) {
-      if ((chunk + "\n" + line).length > 3_200) {
-        chunks.push(chunk);
-        chunk = line;
-      } else chunk += `${chunk ? "\n" : ""}${line}`;
-    }
-    if (chunk) chunks.push(chunk);
-    for (const part of chunks) await message.send(part);
-  } catch (error) {
-    console.error("[CODE-RUNNER:LANGUAGES]", error?.message || error);
-    await message.send(`Could not load languages: ${error?.message || "the sandbox service is unavailable"}`);
+  description: "Show supported code runner languages",
+})(async (message) => {
+  if (!isOwner(message)) {
+    return message.send("⛔ এই command শুধু owner ব্যবহার করতে পারবে।");
   }
+
+  return message.send(
+    `*PABITRA RUNNER LANGUAGES*\n\n` +
+    `• Python (.py)\n` +
+    `• JavaScript (.js, .mjs, .cjs)\n` +
+    `• C++ (.cpp, .cc, .cxx)\n` +
+    `• C (.c)\n` +
+    `• Go (.go)\n` +
+    `• Ruby (.rb)\n\n` +
+    `Code file-এ reply দিয়ে .run লেখো।`
+  );
 });
