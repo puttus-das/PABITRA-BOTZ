@@ -116,6 +116,21 @@ async function getInfo(q) {
   }
 }
 
+// Compatibility helpers used by .music and .csong. Keep these wrappers on the
+// current playback APIs so older plugins do not fail during plugin discovery.
+export async function searchEliteVideo(query) {
+  return getInfo(query);
+}
+
+export async function downloadEliteAudio(url) {
+  return fetchBuffer(url, { tries: 2, min: 1000 });
+}
+
+export async function searchRabbitSong(query) {
+  const result = await rabbitPlay(query);
+  return { ...result, audioUrl: result.url };
+}
+
 // Rabbit /api/song as a last-resort audio source (any http link in the answer that is not an image / YouTube page)
 async function rabbitSongUrl(q) {
   const res = await axios.get(`${RABBIT}/api/song`, {

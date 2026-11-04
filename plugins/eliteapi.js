@@ -44,7 +44,7 @@ Module({ command: "applemusic", aliases: ["amsearch"], package: "eliteapi", desc
   const query = clean(q); if (!query) return need(m, false, ".applemusic song name");
   await reply(m, "𝐀ᴘᴘʟᴇ 𝐌ᴜsɪᴄ 𝐒ᴇᴀʀᴄʜ", () => getApi("/search/applemusic", { query, q: query, text: query }));
 });
-Module({ command: "ytsearch", aliases: ["yts"], package: "eliteapi", description: "Search YouTube videos", usage: ".ytsearch query" })(async (m, q) => {
+Module({ command: "ytsearch", aliases: [], package: "eliteapi", description: "Search YouTube videos", usage: ".ytsearch query" })(async (m, q) => {
   const query = clean(q); if (!query) return need(m, false, ".ytsearch query");
   await reply(m, "𝐘ᴏᴜTᴜʙᴇ 𝐒ᴇᴀʀᴄʜ", () => getApi("/search/ytsearch", { query, q: query, text: query }));
 });
@@ -88,8 +88,8 @@ Module({ command: "sps", aliases: ["spotifysearch"], package: "eliteapi", descri
   await reply(m, "𝐒ᴘᴏᴛɪғʏ 𝐒ᴇᴀʀᴄʜ", () => getApi("/search/sps", { query, q: query }));
 });
 
-Module({ command: "ytmp3", aliases: ["ytsearchmp3"], package: "eliteapi", description: "Use EliteProTech YouTube MP3 search", usage: ".ytmp3 song name or YouTube URL" })(async (m, q) => {
-  const query = clean(q); if (!query) return need(m, false, ".ytmp3 song name or YouTube URL");
+Module({ command: "eliteytmp3", aliases: ["ytsearchmp3"], package: "eliteapi", description: "Use EliteProTech YouTube MP3 search", usage: ".eliteytmp3 song name or YouTube URL" })(async (m, q) => {
+  const query = clean(q); if (!query) return need(m, false, ".eliteytmp3 song name or YouTube URL");
   await reply(m, "𝐘ᴏᴜTᴜʙᴇ 𝐌ᴘ𝟑 𝐀ᴘɪ", () => getApi("/download/ytmp3", { q: query }));
 });
 

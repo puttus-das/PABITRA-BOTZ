@@ -35,7 +35,7 @@ const normalizeJid = (jid = "") =>
 
 Module({
   command: "tagall",
-  aliases: ["all", "everyone"],
+  aliases: [],
   package: "group",
   description: "Tag all members with image and contact button"
 })(async (message, match) => {

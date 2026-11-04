@@ -1182,7 +1182,7 @@ Module({
 Module({
   command: "everyone",
   package: "group",
-  aliases: ["all", "tagall"],
+  aliases: ["all"],
   description: "Tag all group members",
   usage: ".everyone <message>",
 })(async (message, match) => {

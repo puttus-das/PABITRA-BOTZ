@@ -151,7 +151,7 @@ Module({ on: "text" })(async (message) => {
 // ─────────────────────────────────────────────
 Object.keys(reactions).forEach((reactionName) => {
   // .run is reserved for the owner-only sandbox code runner.
-  if (reactionName === "run") return;
+  if (["run", "kick"].includes(reactionName)) return;
   Module({
     command: reactionName,
     package: "reactions",

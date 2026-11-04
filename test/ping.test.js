@@ -18,7 +18,7 @@ test("ping sends one card with one audio button and no separate text message", a
 
   assert.equal(relayed.length, 1);
   const card = relayed[0].payload.viewOnceMessage.message.interactiveMessage;
-  assert.match(card.body.text, /^⚡ \*PONG\* — \d+ ms$/);
+  assert.match(card.body.text, /^\*━\( 𝐏ᴀʙɪᴛʀᴀ  \d+  𝐁ᴏᴛ⎯꯭̽💜 \)━\*$/);
   assert.equal(card.footer.text, "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*");
   assert.equal(card.header.hasMediaAttachment, false);
   assert.equal(card.header.imageMessage, null);

@@ -666,7 +666,7 @@ Module({
 Module({
   command: "delete",
   package: "owner",
-  aliases: ["del"],
+  aliases: [],
   description: "Delete bot's message",
   usage: ".delete <reply to bot message>",
 })(async (message) => {
@@ -831,7 +831,7 @@ Module({
 Module({
   command: "del",
   package: "owner",
-  aliases: ["delete"],
+  aliases: [],
   description: "Delete a quoted message (bot owner)",
   usage: ".del (reply to message)",
 })(async (message) => {
