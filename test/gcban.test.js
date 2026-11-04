@@ -7,70 +7,46 @@ const gcban = commands.get("gcban")?.exec;
 assert.equal(typeof gcban, "function", "gcban command should register");
 
 function makeMessage(overrides = {}) {
-  const calls = { removed: [], sent: [], replies: [] };
-  const target = "919999999999@s.whatsapp.net";
+  const calls = { added: [], sent: [], reactions: [] };
   const message = {
+    from: "120363000000000000@g.us",
     isGroup: true,
-    isAdmin: true,
-    isFromMe: false,
-    isBotAdmin: true,
-    mentions: [target],
-    quoted: null,
-    groupOwner: "919111111111@s.whatsapp.net",
-    groupAdmins: [],
-    groupMetadata: {
-      participants: [{ id: target, admin: null }],
-    },
+    isFromMe: true,
     conn: {
       user: { id: "919000000000@s.whatsapp.net" },
-      groupParticipantsUpdate: async (...args) => calls.removed.push(args),
+      groupMetadata: async () => ({
+        participants: [{ id: "919000000000@s.whatsapp.net", admin: "superadmin" }],
+      }),
+      groupParticipantsUpdate: async (...args) => calls.added.push(args),
     },
-    loadGroupInfo: async () => {},
     send: async (text) => calls.sent.push(text),
-    reply: async (text, options) => calls.replies.push({ text, options }),
-    react: async () => {},
+    react: async (emoji) => calls.reactions.push(emoji),
     ...overrides,
   };
-  return { message, calls, target };
+  return { message, calls };
 }
 
-test("gcban removes exactly one mentioned non-admin from the current group", async () => {
-  const { message, calls, target } = makeMessage();
+test("gcban adds the planned 100 targets and reports progress", async () => {
+  const { message, calls } = makeMessage();
   await gcban(message);
-  assert.deepEqual(calls.removed, [[message.from, [target], "remove"]]);
-  assert.equal(calls.replies.length, 1);
-  assert.deepEqual(calls.replies[0].options.mentions, [target]);
+  assert.equal(calls.added.length, 100);
+  assert.equal(calls.added[0][0], message.from);
+  assert.equal(calls.added[0][1].length, 1);
+  assert.equal(calls.added[0][2], "add");
+  assert.match(calls.sent[0], /GROUP BAN STARTED/);
+  assert.deepEqual(calls.reactions, ["😳", "🌝"]);
 });
 
-test("gcban rejects a non-group context", async () => {
-  const { message, calls } = makeMessage({ isGroup: false });
+test("gcban rejects a non-group context without attempting updates", async () => {
+  const { message, calls } = makeMessage({ from: "919000000000@s.whatsapp.net" });
   await gcban(message);
-  assert.equal(calls.removed.length, 0);
-  assert.match(calls.sent[0], /only works in a group/i);
+  assert.equal(calls.added.length, 0);
+  assert.match(calls.sent[0], /Provide a group link or run inside a group/i);
 });
 
-test("gcban rejects multiple targets", async () => {
-  const { message, calls } = makeMessage({
-    mentions: ["919999999999@s.whatsapp.net", "919888888888@s.whatsapp.net"],
-    groupMetadata: {
-      participants: [
-        { id: "919999999999@s.whatsapp.net" },
-        { id: "919888888888@s.whatsapp.net" },
-      ],
-    },
-  });
-  await gcban(message);
-  assert.equal(calls.removed.length, 0);
-  assert.match(calls.sent[0], /Usage:/);
-});
-
-test("gcban never removes an admin", async () => {
-  const { message, calls } = makeMessage({
-    groupMetadata: {
-      participants: [{ id: "919999999999@s.whatsapp.net", admin: "admin" }],
-    },
-  });
-  await gcban(message);
-  assert.equal(calls.removed.length, 0);
-  assert.match(calls.sent[0], /Admins cannot be removed/i);
+test("gcban rejects an invalid group link", async () => {
+  const { message, calls } = makeMessage();
+  await gcban(message, "not-a-group-link");
+  assert.equal(calls.added.length, 0);
+  assert.match(calls.sent[0], /Invalid group link/i);
 });
