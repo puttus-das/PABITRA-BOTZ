@@ -1,221 +1,388 @@
-import axios from "axios";
+import os from "os";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+import { db } from "../lib/client.js";
+import { Module, getCommands } from "../lib/plugins.js";
 import config from "../config.js";
-import { Module } from "../lib/plugins.js";
+import { proto, generateWAMessageFromContent, prepareWAMessageMedia } from "baileys";
+import { sendPing } from "../lib/pingCore.js";
 
-// ─── .play / .song <song name or YouTube URL> ────────────────────────────────
-// No buttons, no card: the MP3 is sent straight away as a normal audio message,
-// quoted on the Pabitra-Paul VCard (message.gift).
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const RABBIT = (process.env.RABBIT_API_BASE || "https://rabbitapi.zone.id").replace(/\/+$/, "");
-const MUSIC_API = process.env.MUSIC_API || "https://api.sayan-nexuswork.workers.dev/music";
-const CAPTION = "© 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
-const UA =
-  "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Mobile Safari/537.36";
-
-// ── font: first letter 𝐁𝐨𝐥𝐝, rest ꜱᴍᴀʟʟ-ᴄᴀᴘꜱ ──
+const menuImgPath = path.join(__dirname, "bin", "menu.jpg");
+const menuThumbPath = path.join(__dirname, "bin", "menu_thumb.jpg");
+let _menuThumb = null;
+const getMenuThumb = () => {
+  if (_menuThumb) return _menuThumb;
+  const f = fs.existsSync(menuThumbPath) ? menuThumbPath : menuImgPath;
+  try { _menuThumb = fs.readFileSync(f); } catch { _menuThumb = null; }
+  return _menuThumb;
+};
+// random dp: plugins/bin/menu/*.jpg — a different image on every .menu
+const MENU_DIR = path.join(__dirname, "bin", "menu");
+let _lastMenuImg = "";
+const menuMediaCache = new Map(); // image path → { m: imageMessage, t: uploadedAt }
+const pickMenuImg = () => {
+  try {
+    const all = fs.readdirSync(MENU_DIR).filter((x) => /\.(jpe?g|png)$/i.test(x));
+    const pool = all.length > 1 ? all.filter((x) => x !== _lastMenuImg) : all;
+    if (pool.length) {
+      _lastMenuImg = pool[Math.floor(Math.random() * pool.length)];
+      return path.join(MENU_DIR, _lastMenuImg);
+    }
+  } catch {}
+  return menuImgPath;
+};
+const name = "𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ";
 const SC = { a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
 const boldCap = (ch) => String.fromCodePoint(0x1d400 + (ch.toUpperCase().charCodeAt(0) - 65));
-const fancy = (t) =>
-  String(t).replace(/[A-Za-z]+/g, (w) => boldCap(w[0]) + [...w.slice(1)].map((c) => SC[c.toLowerCase()] ?? c).join(""));
+// "copilot" → "𝐂ᴏᴘɪʟᴏᴛ"  (digits, emoji and symbols stay as they are)
+const fancy = (text) =>
+  String(text).replace(/[A-Za-z]+/g, (w) => boldCap(w[0]) + [...w.slice(1)].map((c) => SC[c.toLowerCase()] ?? c).join(""));
+const runtime = (secs) => {
+  const pad = (s) => s.toString().padStart(2, "0");
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+};
+// never wait minutes on a stuck media upload — give up after `ms` and fall back
+const withTimeout = (promise, ms, label) =>
+  Promise.race([
+    promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} upload timed out (${ms / 1000}s)`)), ms)),
+  ]);
+const readMore = String.fromCharCode(8206).repeat(4001);
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const withTimeout = (p, ms, label) =>
-  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} timed out`)), ms))]);
-const isHttp = (v) => typeof v === "string" && /^https?:\/\//i.test(v);
-const isImage = (v) => /\.(jpe?g|png|webp|gif)(\?|$)/i.test(v) || /ytimg\.com/i.test(v);
+// 𝐁𝐨𝐥𝐝 math letters + digits  (A-Z a-z 0-9)
+const MB = (t) =>
+  String(t).replace(/[A-Za-z0-9]/g, (c) => {
+    const n = c.charCodeAt(0);
+    if (n >= 65 && n <= 90) return String.fromCodePoint(0x1d400 + n - 65);
+    if (n >= 97 && n <= 122) return String.fromCodePoint(0x1d41a + n - 97);
+    return String.fromCodePoint(0x1d7ce + n - 48);
+  });
 
-// videoId → { title, url(mp3), ... }  (so the Audio button does not need another API call)
-const cache = new Map();
-const TTL = 30 * 60 * 1000;
-const remember = (id, info) => {
-  cache.set(id, { ...info, at: Date.now() });
-  for (const [k, v] of cache) if (Date.now() - v.at > TTL) cache.delete(k);
+// ids of menu cards we sent (so a tap that only carries the button label can be recognised)
+const menuCards = new Set();
+const rememberCard = (id) => {
+  if (!id) return;
+  menuCards.add(id);
+  if (menuCards.size > 300) menuCards.delete(menuCards.values().next().value);
 };
 
-// ── Rabbit /api/play ──
-async function rabbitPlay(q) {
-  const res = await axios.get(`${RABBIT}/api/play`, {
-    params: { q },
-    timeout: 90_000,
-    headers: { "User-Agent": UA },
-    validateStatus: () => true,
-  });
-  const j = res.data || {};
-  const r = j.result;
-  if (!(j.status === true || j.status === "success") || !r || !isHttp(r.url)) {
-    throw new Error(j.message || j.error || "Song not found");
-  }
-  return {
-    title: r.title || "Unknown",
-    videoId: r.videoId || null,
-    duration: r.duration || "N/A",
-    views: r.views || "N/A",
-    uploaded: r.uploaded || "N/A",
-    channel: (typeof r.author === "string" ? r.author : r.author?.name) || r.channel || null,
-    thumbnail: r.thumbnail || null,
-    url: r.url,
-    source: "rabbit",
-  };
+
+// Build grouped commands from current plugin list (uses snapshot getter)
+function buildGroupedCommands() {
+  const cmds = getCommands();
+  return cmds
+    .filter((cmd) => cmd && cmd.command && cmd.command !== "undefined")
+    .reduce((acc, cmd) => {
+      const pkg = (cmd.package || "uncategorized").toString().toLowerCase();
+      if (!acc[pkg]) acc[pkg] = [];
+      acc[pkg].push(cmd.command);
+      return acc;
+    }, {});
 }
 
-// ── sayan-nexuswork /music?query=  (new API: title, duration, views, channel, thumbnail, url) ──
-const firstOf = (objs, keys) => {
-  for (const o of objs) {
-    if (!o || typeof o !== "object") continue;
-    for (const k of keys) if (o[k] != null && o[k] !== "") return o[k];
-  }
-  return null;
-};
-async function sayanMusic(query) {
-  const res = await axios.get(MUSIC_API, {
-    params: { query },
-    timeout: 90_000,
-    headers: { "User-Agent": UA },
-    validateStatus: () => true,
-  });
-  const j = res.data && typeof res.data === "object" ? res.data : {};
-  const scopes = [j, j.result, j.data];
-  let link = firstOf(scopes, ["url", "download", "download_url", "downloadUrl", "audio", "link", "mp3"]);
-  if (!isHttp(link) || isImage(link)) {
-    // last resort: any http link in the answer that is not an image
-    const found = [];
-    const walk = (o) => {
-      if (typeof o === "string") { if (isHttp(o) && !isImage(o)) found.push(o); }
-      else if (o && typeof o === "object") Object.values(o).forEach(walk);
-    };
-    walk(j);
-    link = found[0] || null;
-  }
-  if (!link) throw new Error(j.message || j.error || "Song not found");
-  const thumbnail = firstOf(scopes, ["thumbnail", "thumb", "image", "cover"]);
-  const videoId =
-    firstOf(scopes, ["videoId", "video_id", "id"]) ||
-    /\/vi(?:_webp)?\/([\w-]{11})\//.exec(String(thumbnail || ""))?.[1] ||
-    null;
-  const author = firstOf(scopes, ["channel", "author", "artist", "uploader"]);
-  return {
-    title: String(firstOf(scopes, ["title", "name"]) || "Unknown"),
-    videoId: videoId && String(videoId).length <= 24 ? String(videoId) : null,
-    duration: String(firstOf(scopes, ["duration", "timestamp"]) || "N/A"),
-    views: String(firstOf(scopes, ["views", "view_count"]) || "N/A"),
-    uploaded: String(firstOf(scopes, ["uploaded", "published", "ago", "uploadDate"]) || "N/A"),
-    channel: author ? String(typeof author === "object" ? author.name || "" : author) || null : null,
-    thumbnail: isHttp(thumbnail) ? thumbnail : null,
-    url: link,
-    source: "sayan",
-  };
-}
-
-// card details: new music API first, Rabbit /api/play as backup
-async function getInfo(q) {
-  try {
-    return await sayanMusic(q);
-  } catch (e) {
-    console.error("[PLAY] music API failed, trying Rabbit:", e?.message || e);
-    return rabbitPlay(q);
-  }
-}
-
-// Rabbit /api/song as a last-resort audio source (any http link in the answer that is not an image / YouTube page)
-async function rabbitSongUrl(q) {
-  const res = await axios.get(`${RABBIT}/api/song`, {
-    params: { q },
-    timeout: 90_000,
-    headers: { "User-Agent": UA },
-    validateStatus: () => true,
-  });
-  const found = [];
-  const walk = (o) => {
-    if (typeof o === "string") {
-      if (isHttp(o) && !isImage(o) && !/youtube\.com|youtu\.be/i.test(o)) found.push(o);
-    } else if (o && typeof o === "object") Object.values(o).forEach(walk);
-  };
-  walk(res.data);
-  if (!found.length) throw new Error("song link not found");
-  return found[0];
-}
-
-async function fetchBuffer(url, { tries = 4, timeout = 120_000, min = 1000 } = {}) {
-  let lastErr;
-  for (let i = 1; i <= tries; i++) {
-    try {
-      const res = await axios.get(url, {
-        responseType: "arraybuffer",
-        timeout,
-        headers: { "User-Agent": UA },
-        maxContentLength: 120 * 1024 * 1024,
-      });
-      const buf = Buffer.from(res.data);
-      if (buf.length < min) throw new Error(`file too small (${buf.length} bytes)`);
-      return buf;
-    } catch (err) {
-      lastErr = err;
-      console.error(`[PLAY:DL] try ${i}/${tries}: ${err?.message || err}`);
-      if (i < tries) await sleep(2500);
-    }
-  }
-  throw lastErr;
-}
-
-// ── .play / .song ──
+// Menu command
 Module({
-  command: "play",
-  aliases: ["song", "yta", "ytmp3"],
-  package: "downloader",
-  description: "Search YouTube and get the song as audio",
+  command: "menu",
+  package: "general",
+  description: "Show all commands or a specific package",
 })(async (message, match) => {
-  const q = (match || "").trim();
-  const reply = (text) => message.conn.sendMessage(message.from, { text }, { quoted: message.gift });
-  if (!q) return reply(`*${fancy("usage")}:* ${config.prefix}play <${fancy("song name or youtube url")}>`);
   try {
-    try { await message.react("🎵"); } catch (_) {}
-    const r = await getInfo(q);
-    const id = r.videoId || Date.now().toString(36);
-    remember(id, r);
-    await sendAudio(message, id);
+    try { await message.react("📜"); } catch (_) {}
+    const now = new Date();
+    const dd = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
+    const tt = now.toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true }).toUpperCase();
+    const isPublic = db.get(message.botnum, "mode", true) === true;
+    const userName = message.pushName || "User";
+    const usedGB = ((os.totalmem() - os.freemem()) / 1073741824).toFixed(2);
+    const totGB = (os.totalmem() / 1073741824).toFixed(2);
+    const ram = `${usedGB} / ${totGB} GB`;
+
+    const grouped = buildGroupedCommands();
+    const categories = Object.keys(grouped).sort();
+    const totalCmds = Object.values(grouped).reduce((n, arr) => n + arr.length, 0);
+    const arg = (match || "").trim().toLowerCase();
+    const showAll = arg === "all";
+    const prefix = config.prefix;
+    const pairUrl = "https://t.me/PABITRA_BOTZ";
+
+    // ── bold blocks ──
+    const catBlock = (cat) => {
+      let t = `*╭━━━〔 ✦ ${MB(cat.toUpperCase())} ✦ 〕━━━╮*\n`;
+      [...grouped[cat]].sort((a, b) => a.localeCompare(b)).forEach((c) => {
+        t += `*┃ ◈ ${fancy(c)}*\n`;
+      });
+      t += `*╰━━━━━━━━━━━━━━━━━━━╯*\n`;
+      return t;
+    };
+    const buildFullList = () => categories.map(catBlock).join("\n");
+
+    const headerBox =
+      `*━━⟪ ${name} ⟫━━*\n\n` +
+      `*┃  ◈ ᴍᴏᴅᴇ      ➤ ${MB(isPublic ? "PUBLIC" : "PRIVATE")}*\n` +
+      `*┃  ◈ ᴘʀᴇғɪx     ➤ ${prefix}*\n` +
+      `*┃  ◈ ᴜsᴇʀ       ➤ ${userName}*\n` +
+      `*┃  ✦ ᴜᴘᴛɪᴍᴇ    ➤ ${MB(runtime(process.uptime()))}*\n` +
+      `*┃  ✦ ᴄᴏᴍᴍᴀɴᴅs ➤ ${MB(totalCmds)}*\n` +
+      `*┃  ✦ ʀᴀᴍ       ➤ ${MB(ram)}*`;
+    const footer = `\n\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ\n*~_Made with love by ♡ 𝐏ᴀʙɪᴛʀᴀ - 𝐏ᴀᴜʟ ♡_~*`;
+
+    const sendText = (text) =>
+      message.conn.sendMessage(message.from, { text: text.trim() }, { quoted: message.gift });
+
+    // ".menu all" → full text list
+    if (showAll) return await sendText(headerBox + "\n\n" + buildFullList() + footer);
+
+    // ".menu <package>" → that package only (or "not found")
+    if (arg) {
+      if (grouped[arg]) return await sendText(catBlock(arg) + footer);
+      let t = `🍌 *${fancy("package not found")}: ${match}*\n\n*${fancy("available packages")}*:\n`;
+      categories.forEach((c) => { t += `*┃ ◈ ${fancy(c)}*\n`; });
+      return await sendText(t + footer);
+    }
+
+    // ── default ".menu" → product card: random dp + title + $99999 + "100 items" + 3 buttons ──
+    const P = proto.Message.InteractiveMessage;
+    const ownerUrl = `https://wa.me/${String(config.owner).replace(/\D/g, "")}`;
+    const bodyText = `${headerBox}\n${readMore}\n${buildFullList().trim()}${footer}`;
+
+    const bizNodes = [
+      {
+        tag: "biz",
+        attrs: {},
+        content: [
+          {
+            tag: "interactive",
+            attrs: { type: "native_flow", v: "1" },
+            content: [{ tag: "native_flow", attrs: { v: "9", name: "mixed" } }],
+          },
+        ],
+      },
+    ];
+    if (!message.from.endsWith("@g.us")) bizNodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
+
+    // random dp — uploaded once per image and reused, so the menu comes fast
+    const imgPath = pickMenuImg();
+    let imageMessage = null;
+    const cached = menuMediaCache.get(imgPath);
+    if (cached && Date.now() - cached.t < 6 * 3600 * 1000) {
+      imageMessage = cached.m;
+    } else {
+      try {
+        const media = await withTimeout(
+          prepareWAMessageMedia({ image: fs.readFileSync(imgPath) }, { upload: message.conn.waUploadToServer }),
+          60_000,
+          "image"
+        );
+        imageMessage = media.imageMessage;
+        menuMediaCache.set(imgPath, { m: imageMessage, t: Date.now() });
+      } catch (e) {
+        console.error("❌ Menu image upload failed, using thumbnail card:", e?.message || e);
+      }
+    }
+
+    // buttons, one under the other: PING · OWNER · PAIR CODE (opens the Telegram group)
+    const buttons = [
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ɪɴɢ ]━", id: `${prefix}ping` }),
+      },
+      {
+        name: "cta_url",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐎ᴡɴᴇʀ ]━", url: ownerUrl, merchant_url: ownerUrl }),
+      },
+      {
+        name: "cta_url",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐏ᴀɪʀ 𝐂ᴏᴅᴇ ]━", url: pairUrl, merchant_url: pairUrl }),
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐕ɪᴅᴇᴏ ]━", id: `${prefix}musicvideo` }),
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({ display_text: "━[ 𝐀ᴜᴅɪᴏ ]━", id: `${prefix}audio` }),
+      },
+    ];
+
+    // product-card header: dp + name + $99999 + "🛒 100 items"; the product link is the Telegram group
+    const productHeader = () =>
+      P.Header.create({
+        title: name,
+        hasMediaAttachment: true,
+        productMessage: proto.Message.ProductMessage.create({
+          product: proto.Message.ProductMessage.ProductSnapshot.create({
+            productImage: imageMessage,
+            productId: "99999",
+            title: name,
+            description: name,
+            currencyCode: "USD",
+            priceAmount1000: 99999000,
+            retailerId: "PABITRA-BOT",
+            url: pairUrl,
+            productImageCount: 100,
+          }),
+          businessOwnerJid: message.botJid || "0@s.whatsapp.net",
+        }),
+      });
+    const plainHeader = () =>
+      P.Header.create({
+        hasMediaAttachment: !!imageMessage,
+        ...(imageMessage ? { imageMessage } : {}),
+      });
+
+    // no newsletter / forwarded label on the menu
+    const relayCard = async (header, useThumbCard) => {
+      const msg = generateWAMessageFromContent(
+        message.from,
+        {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+              interactiveMessage: P.create({
+                body: P.Body.create({ text: bodyText }),
+                footer: P.Footer.create({ text: name }),
+                header,
+                contextInfo: useThumbCard
+                  ? {
+                      externalAdReply: {
+                        title: `${name} • Online`,
+                        body: `Type ${prefix}menu <package> for more`,
+                        thumbnail: getMenuThumb(),
+                        mediaType: 1,
+                        renderLargerThumbnail: true,
+                        showAdAttribution: false,
+                        sourceUrl: pairUrl,
+                      },
+                    }
+                  : {},
+                nativeFlowMessage: P.NativeFlowMessage.create({ buttons }),
+              }),
+            },
+          },
+        },
+        { quoted: message.gift, userJid: message.conn.user?.id }
+      );
+      await message.conn.relayMessage(message.from, msg.message, {
+        messageId: msg.key.id,
+        additionalNodes: bizNodes,
+      });
+      rememberCard(msg.key.id);
+    };
+
+    let sent = false;
+    if (imageMessage) {
+      try {
+        await relayCard(productHeader(), false);
+        sent = true;
+      } catch (e) {
+        console.error("❌ Product menu failed, trying image menu:", e?.message || e);
+        try {
+          await relayCard(plainHeader(), false);
+          sent = true;
+        } catch (e2) {
+          console.error("❌ Image menu failed:", e2?.message || e2);
+        }
+      }
+    } else {
+      try {
+        await relayCard(plainHeader(), true);
+        sent = true;
+      } catch (e) {
+        console.error("❌ Thumbnail menu failed:", e?.message || e);
+      }
+    }
+    if (!sent) await sendText(headerBox + "\n\n" + buildFullList() + footer);
   } catch (err) {
-    console.error("[PLAY]", err?.message || err);
-    await reply(`⚠️ ${err?.message || "play failed"}\n\n${CAPTION}`);
+    console.error("❌ Menu command error:", err);
+    await message.conn.sendMessage(message.from, { text: `❌ Error: ${err?.message || err}` });
   }
 });
 
-async function sendAudio(message, id) {
-  const info = cache.get(id);
-  let title = info?.title || "audio";
-  let buf = null;
+// PING button on the menu card.
+// A tap normally arrives as ".ping" (handled by the ping command). Some WhatsApp versions
+// deliver only the button label / a template reply instead — catch those here.
+Module({ on: "text" })(async (message) => {
+  try {
+    const body = (message.body || "").trim();
+    if (!body) return;
+    const prefix = config.prefix;
+    if (body.startsWith(prefix)) return; // normal command path already handles it
 
-  const attempts = [];
-  if (info?.url) attempts.push(["card link", async () => info.url]);
-  const realId = /^[\w-]{11}$/.test(id);
-  if (realId && info?.source !== "sayan") {
-    attempts.push(["music API", async () => (await sayanMusic(`https://youtu.be/${id}`)).url]);
-  }
-  if (realId && info?.source !== "rabbit") {
-    attempts.push(["Rabbit play", async () => (await rabbitPlay(`https://youtu.be/${id}`)).url]);
-  }
-  if (realId) attempts.push(["Rabbit song", async () => rabbitSongUrl(`https://youtu.be/${id}`)]);
+    const r = message.raw?.message || {};
+    const tapId =
+      r.templateButtonReplyMessage?.selectedId ||
+      r.buttonsResponseMessage?.selectedButtonId ||
+      "";
+    const isPingId = tapId === `${prefix}ping`;
+    const isPingLabel = [fancy("ping"), "ᴘɪɴɢ", "ping"].includes(body.toLowerCase()) || body === fancy("ping");
+    const fromMenu = !!(message.quoted?.id && menuCards.has(message.quoted.id));
 
-  let lastErr;
-  for (const [name, getUrl] of attempts) {
-    try {
-      const url = await getUrl();
-      buf = await fetchBuffer(url, { tries: 2, min: 20_000 });
-      break;
-    } catch (e) {
-      lastErr = e;
-      console.error(`[PLAY:AUDIO] ${name} failed: ${e?.message || e}`);
-    }
+    if (isPingId || (isPingLabel && fromMenu)) await sendPing(message);
+  } catch (e) {
+    console.error("[menu] ping tap error:", e?.message || e);
   }
-  if (!buf) throw lastErr || new Error("audio failed");
+});
 
-  await message.conn.sendMessage(
-    message.from,
-    {
-      audio: buf,
-      mimetype: "audio/mpeg",
-      ptt: false,
-      fileName: `${title.replace(/[\\/:*?"<>|]/g, "").slice(0, 60) || "audio"}.mp3`,
-    },
-    { quoted: message.gift }
-  );
-}
+// List command
+Module({
+  command: "list",
+  package: "general",
+  description: "List all available commands",
+})(async (message) => {
+  try {
+    const aca = getCommands()
+      .filter((cmd) => cmd && cmd.command && cmd.command !== "undefined")
+      .map((cmd) => cmd.command)
+      .join("\n");
+    await message.conn.sendMessage(message.from, {
+      text: `*List:*\n${aca}`,
+    });
+  } catch (err) {
+    console.error("❌ List command error:", err);
+    await message.conn.sendMessage(message.from, {
+      text: `❌ Error: ${err?.message || err}`,
+    });
+  }
+});
+
+// Alive command
+Module({
+  command: "alive",
+  package: "general",
+  description: "Check if bot is alive",
+})(async (message) => {
+  try {
+    const hostname = os.hostname();
+    const time = new Date().toLocaleTimeString("en-ZA", {
+      timeZone: "Africa/Johannesburg",
+    });
+    const ramUsedMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+    const uptime = process.uptime();
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+    const ctx = `
+*${name}* is online
+*Time:* ${time}
+*Host:* ${hostname}
+*RAM Usage:* ${ramUsedMB} MB
+*Uptime:* ${hours}h ${minutes}m ${seconds}s
+`;
+    await message.conn.sendMessage(message.from, {
+      image: fs.readFileSync(pickMenuImg()),
+      caption: ctx + `\n> © 𝐏ᴀʙɪᴛʀᴀ-𝐁ᴏᴛ`,
+    });
+  } catch (err) {
+    console.error("❌ Alive command error:", err);
+    await message.conn.sendMessage(message.from, {
+      text: `❌ Error: ${err?.message || err}`,
+    });
+  }
+});
