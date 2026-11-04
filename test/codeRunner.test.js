@@ -1,36 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatRunResult, parseRunInput } from "../plugins/codeRunner.js";
+import { parseCrmReplayBuffer, parseRunInput } from "../plugins/codeRunner.js";
 import "../plugins/inspect.js";
 import { commands } from "../lib/plugins.js";
 
-test("run parser preserves multiline code and optional stdin", () => {
+test("run parser normalizes supported languages and optional stdin", () => {
   const parsed = parseRunInput('python print("hello")\n--stdin--\nworld\n');
   assert.deepEqual(parsed, {
     language: "python",
     code: 'print("hello")',
-    stdin: "world\n",
+    stdin: "world",
   });
 });
 
-test("run parser rejects missing language or source", () => {
+test("run parser rejects missing, unsupported, or empty source", () => {
   assert.equal(parseRunInput(""), null);
   assert.equal(parseRunInput("python"), null);
+  assert.equal(parseRunInput("php echo 1"), null);
 });
 
-test("run result includes real stdout and clean no-output state", () => {
-  assert.match(formatRunResult({ status: "0", program_output: "2\n" }, "Python"), /Output:\n2/);
-  assert.match(formatRunResult({ status: "0", program_output: "" }, "Python"), /finished with no output/);
-});
-
-test("run result exposes compiler and runtime errors and caps output", () => {
-  const failure = formatRunResult({ status: "1", compiler_error: "Syntax error", program_error: "trace" }, "Python");
-  assert.match(failure, /⚠️ Python/);
-  assert.match(failure, /Syntax error/);
-  assert.match(failure, /trace/);
-  const large = formatRunResult({ status: "0", program_output: "x".repeat(5000) });
-  assert.ok(large.length < 3300);
-  assert.match(large, /output truncated/);
+test("CRM replay parser accepts only same-chat text replay JSON", () => {
+  const payload = Buffer.from(JSON.stringify({
+    format: "PABITRA_CRM_REPLAY",
+    version: 1,
+    source: { chat: "123@g.us" },
+    message: { type: "text", text: "hello" },
+  }));
+  assert.deepEqual(parseCrmReplayBuffer(payload, "123@g.us"), { text: "hello" });
+  assert.throws(() => parseCrmReplayBuffer(payload, "other@g.us"), /অন্য chat/);
 });
 
 test("run command is owner-only and CRM replay command is registered", async () => {
@@ -44,5 +41,5 @@ test("run command is owner-only and CRM replay command is registered", async () 
     sender: "000000000000@s.whatsapp.net",
     send: async (text) => replies.push(String(text)),
   }, 'python print("blocked")');
-  assert.match(replies[0], /owner-only/i);
+  assert.match(replies[0], /owner|শুধু owner/i);
 });

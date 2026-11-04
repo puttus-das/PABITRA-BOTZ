@@ -68,7 +68,7 @@ async function sendRankCard(message, rows, title) {
         { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "👤 MY RANK", id: ".rank me" }) },
       ],
       body: "🏆 Leaderboard actions",
-      footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
+      footer: "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*",
       quoted: message.raw || message.gift,
     });
   } catch (error) {

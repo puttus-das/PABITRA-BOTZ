@@ -37,7 +37,7 @@ async function sendBoard(message, { image, title, cards, cmd }) {
   } catch (e) { console.error("[piano] image failed:", e?.message || e); }
   for (const [text, map] of cards) {
     try {
-      await sendButtons(message, text, "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*", map, cmd);
+      await sendButtons(message, text, "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*", map, cmd);
     } catch (e) {
       console.error("[piano] buttons failed:", e?.message || e);
       const list = Object.keys(map).map((k) => `${prefix()}${cmd} ${k}`).join("\n");

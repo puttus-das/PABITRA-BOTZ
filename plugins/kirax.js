@@ -3,7 +3,7 @@ import { Module } from "../lib/plugins.js";
 
 const API_BASE = (process.env.KIRAX_API_BASE || "https://kiraxmd-api.vercel.app").replace(/\/+$/, "");
 const REQUEST_TIMEOUT = 60_000;
-const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
+const CAPTION = "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*";
 
 const HELP = [
   "*Kirax API commands*",

@@ -5,7 +5,7 @@ import { Module } from "../lib/plugins.js";
 // Safety limits (WhatsApp bans numbers that flood messages): owner only, max MAX, DELAY_MS apart.
 const MAX = 20;
 const DELAY_MS = 1000;
-const DEFAULT_TEXT = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
+const DEFAULT_TEXT = "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

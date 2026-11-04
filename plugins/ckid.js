@@ -51,7 +51,7 @@ Module({
       return await sendButtons(message, {
         title: "📊 Group Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Group ID:*\n\`${id}\``,
-        footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*" ,
+        footer: "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*" ,
         buttons: [
           {
             name: "cta_copy",
@@ -86,7 +86,7 @@ Module({
       return await sendButtons(message, {
         title: "📢 Channel Link Analysis",
         text: `🔗 *Link:* ${link}\n🆔 *Channel ID:*\n\`${id}\``,
-        footer: "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*",
+        footer: "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*",
         buttons: [
           {
             name: "cta_copy",

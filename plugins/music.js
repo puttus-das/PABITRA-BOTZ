@@ -5,7 +5,7 @@ import {
   searchRabbitSong,
 } from "./play.js";
 
-const CAPTION = "*© ━( 𝐏ᴀʙɪᴛʀᴀ - 𝐁ᴏᴛ⎯꯭̽💜 )━*";
+const CAPTION = "*⎯꯭̽ꪹ𝐏𝐚𝐛𝐢𝐭𝐫𝐚 𝐏𝐚𝐮𝐥⎯꯭̽💜*";
 const clean = (value) => String(value || "").trim();
 
 Module({
