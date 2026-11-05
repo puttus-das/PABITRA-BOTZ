@@ -52,32 +52,8 @@ Module({
     const metadata = await conn.groupMetadata(from);
     const participants = metadata.participants || [];
 
-    // SENDER CHECK
-    const sender =
-      message.sender ||
-      message.participant ||
-      message.key?.participant ||
-      message.raw?.key?.participant;
-
-    if (!sender) {
-      return message.reply("❌ Cannot identify sender!");
-    }
-
-    const senderJid = normalizeJid(sender);
-
-    const senderData = participants.find(
-      p => normalizeJid(p.id) === senderJid
-    );
-
-    // ADMIN CHECK
-    if (
-      !senderData ||
-      !["admin", "superadmin"].includes(senderData.admin)
-    ) {
-      return message.reply("❌ Admin only command!");
-    }
-
-    // BOT ADMIN CHECK
+    // Any group member may use .tagall. The bot still needs to be an admin
+    // so WhatsApp accepts the group operation reliably.
     const botJid = normalizeJid(conn.user?.id || "");
 
     const botData = participants.find(
