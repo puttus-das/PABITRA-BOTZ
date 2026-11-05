@@ -52,20 +52,9 @@ Module({
     const metadata = await conn.groupMetadata(from);
     const participants = metadata.participants || [];
 
-    // Any group member may use .tagall. The bot still needs to be an admin
-    // so WhatsApp accepts the group operation reliably.
+    // Any group member may use .tagall. Do not require the bot to be an
+    // administrator; WhatsApp can still accept a normal group message.
     const botJid = normalizeJid(conn.user?.id || "");
-
-    const botData = participants.find(
-      p => normalizeJid(p.id) === botJid
-    );
-
-    if (
-      !botData ||
-      !["admin", "superadmin"].includes(botData.admin)
-    ) {
-      return message.reply("❌ Bot must be admin!");
-    }
 
     // GET MEMBERS
     const mentions = participants
